@@ -1,9 +1,12 @@
 import discord
 from discord.ext import commands
-
+import sys
 
 bot = commands.Bot(command_prefix='!')
 
+bot_token = sys.argv[1]
+
+print("Using bot_token: " + bot_token)
 
 @bot.event
 async def on_connect():
@@ -26,6 +29,7 @@ async def echo(context: commands.Context, *args):
     print(args)
     await context.send("args: " + str(args) + "\n", embed="test")
 
+
 @bot.command()
 async def scrims(context: commands.Context, *args):
     if len(args) > 0:
@@ -45,4 +49,4 @@ async def scrims(context: commands.Context, *args):
     await context.send(embed=message_embed)
 
 
-bot.run("NDY1MzQ4NDYwMzkzMDA1MDY3.W0F7hg.28wUqhIwSMTMgZ6cStDXs38qBnQ")
+bot.run(bot_token)
