@@ -4,12 +4,7 @@ import sys
 
 bot = commands.Bot(command_prefix='!')
 
-if len(sys.argv) < 2:
-    print("Bot token must be passed as command line argument.\n If you don't "
-          "have the bot token yet, ask MrNo")
-bot_token = sys.argv[1]
 
-print("Using bot_token: " + bot_token)
 
 @bot.event
 async def on_connect():
@@ -49,7 +44,24 @@ async def scrims(context: commands.Context, *args):
         url="https://i.imgur.com/J6wmi3U.png%22%7D,%22color%22:4886754%7D"
     )
 
+    message_embed.colour
+
     await context.send(embed=message_embed)
 
 
-bot.run(bot_token)
+def main():
+    if len(sys.argv) < 2:
+        print(
+            "Bot token must be passed as command line argument.\nIf you don't "
+            "have the bot token yet, ask MrNo")
+        exit()
+
+    bot_token = sys.argv[1]
+
+    print("Using bot_token: " + bot_token)
+
+    bot.run(bot_token)
+
+
+if __name__ == '__main__':
+    main()
