@@ -44,8 +44,6 @@ async def scrims(context: commands.Context, *args):
         url="https://i.imgur.com/J6wmi3U.png%22%7D,%22color%22:4886754%7D"
     )
 
-    message_embed.colour
-
     await context.send(embed=message_embed)
 
 
