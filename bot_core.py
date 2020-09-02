@@ -38,11 +38,14 @@ async def scrims(context: commands.Context, *args):
     message_embed.title = ":tools: CREATE GAME"
 
     message_embed.description = \
-        "React below :arrow_forward: and we'll start setting up your game\nMake sure your DMs are on"
+        "React below :arrow_forward: and we'll start setting up your game" \
+        "\n*Make sure your DMs are on*"
 
     message_embed.set_thumbnail(
         url="https://i.imgur.com/J6wmi3U.png%22%7D,%22color%22:4886754%7D"
     )
+
+    message_embed.colour = discord.Colour.from_rgb(74, 144, 226)
 
     await context.send(embed=message_embed)
 
