@@ -4,6 +4,9 @@ import sys
 
 bot = commands.Bot(command_prefix='!')
 
+if len(sys.argv) < 2:
+    print("Bot token must be passed as command line argument.\n If you don't "
+          "have the bot token yet, ask MrNo")
 bot_token = sys.argv[1]
 
 print("Using bot_token: " + bot_token)
