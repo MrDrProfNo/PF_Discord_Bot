@@ -40,7 +40,7 @@ async def echo(context: commands.Context, *args):
 @bot.command()
 async def scrims(context: commands.Context, *args):
     if len(args) > 0:
-        await context.send("scrims command does not accept arguments")
+        await context.send("'!scrims' command does not accept arguments")
         return
 
     message_embed = discord.Embed()
