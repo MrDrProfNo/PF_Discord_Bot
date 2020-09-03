@@ -38,13 +38,23 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
 
     # don't send to bots.
     if not user.bot:
-        print("sent message to: ", user.name)
+        print("sent message to:", user.name)
         await user.send(content="You reacted to me with {0}!".format(reaction))
 
 
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     print("RAW reaction received")
+    user = bot.get_user(payload.user_id)
+    print("From user:", user.name, "(" + str(payload.user_id) + ")")
+    print("")
+    emoji = payload.emoji
+    if not user.bot:
+        print("sent message to:", user.name)
+        await user.send(
+            content="You reacted to an *old* message of mine with {0}"
+            .format(str(emoji))
+        )
 
 
 @bot.command()
