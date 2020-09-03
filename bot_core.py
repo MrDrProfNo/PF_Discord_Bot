@@ -14,7 +14,6 @@ UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
 bot = commands.Bot(command_prefix='!')
 
 
-
 @bot.event
 async def on_connect():
     print("Connected")
@@ -28,6 +27,30 @@ async def on_ready():
 @bot.event
 async def on_disconnect():
     print("Disconnect")
+
+
+@bot.event
+async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
+    print("-" * 20 + "reaction received" + "-" * 20)
+    print("REACTION:")
+    print("emoji:", str(reaction.emoji))
+    print("num reactions:", str(reaction.count))
+    print("I reacted:", str(reaction.me))
+    print("message ID:", str(reaction.message.id))
+
+    print("react by USER:")
+    print("username:", str(user.display_name))
+    print("user is bot:", str(user.bot))
+
+    # don't send to bots.
+    if not user.bot:
+        print("sent message to: ", user.name)
+        await user.send(content="You reacted to me with {0}!".format(reaction))
+
+
+@bot.event
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+    print("RAW reaction received")
 
 
 @bot.command()
@@ -66,8 +89,6 @@ async def scrims(context: commands.Context, *args):
     # TODO: message ID will come in useful later when tracking which message
     #  was reacted to.
     print("Message ID: " + str(msg.id))
-
-
 
 
 def main():
