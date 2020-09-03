@@ -38,11 +38,49 @@ async def on_disconnect():
     print("Disconnect")
 
 
+@bot.event
+async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
+    print("-" * 20 + "reaction received" + "-" * 20)
+    print("REACTION:")
+    print("emoji:", str(reaction.emoji))
+    print("num reactions:", str(reaction.count))
+    print("I reacted:", str(reaction.me))
+    print("message ID:", str(reaction.message.id))
+
+    print("react by USER:")
+    print("username:", str(user.display_name))
+    print("user is bot:", str(user.bot))
+
+    # don't send to bots.
+    if not user.bot:
+        print("sent message to:", user.name)
+        await user.send(content="You reacted to me with {0}!".format(reaction))
+
+
+@bot.event
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+    print("RAW reaction received")
+    user = bot.get_user(payload.user_id)
+    print("From user:", user.name, "(" + str(payload.user_id) + ")")
+    print("")
+    emoji = payload.emoji
+    if not user.bot:
+        print("sent message to:", user.name)
+        await user.send(
+            content="You reacted to an *old* message of mine with {0}"
+            .format(str(emoji))
+        )
+
+
 @bot.command()
 async def echo(context: commands.Context, *args):
-    print(context)
-    print(args)
-    await context.send("args: " + str(args) + "\n", embed="test")
+    output_string = ""
+    for arg in args:
+        output_string += arg + " "
+    if output_string == "":
+        pass
+    else:
+        await context.send(content=output_string)
 
 
 @bot.command()
