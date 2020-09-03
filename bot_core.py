@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import sys
+import unicodedata
 
 
 # this value obtained using:
@@ -69,6 +70,11 @@ async def scrims(context: commands.Context, *args):
     print("Message ID: " + str(msg.id))
 
 
+@bot.command()
+async def uni(context: commands.Context, emoji, *args):
+    as_unicode = "\\N{" + unicodedata.name(emoji[0]) + "}"
+    reply_string = emoji + ": " + as_unicode
+    await context.send(content=reply_string)
 
 
 def main():
