@@ -58,6 +58,27 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
 
 
 @bot.event
+async def on_message(message: discord.Message):
+    if not message.author.bot:
+        author_name = message.author.name
+        channel: discord.TextChannel = message.channel
+
+        if type(channel) == discord.TextChannel:
+            channel_name = channel.name
+        else:
+            channel_name = "DM"
+
+        content = message.content
+        print("{0}({1}): {2}".format(
+            author_name,
+            channel_name,
+            content
+        ))
+
+
+
+
+@bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     print("RAW reaction received")
     user = bot.get_user(payload.user_id)
