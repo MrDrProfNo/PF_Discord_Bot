@@ -1,14 +1,7 @@
 import discord
 from discord.ext import commands
 import sys
-
-
-# this value obtained using:
-# import unicodedata
-# unicodedata.name('▶')
-# where ▶ was obtained by escaping the first colon of the emoji text code, and
-# copy-pasting the resultant output.
-UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
+from unicode_constants import UNICODE_FORWARD_ARROW
 
 
 bot = commands.Bot(command_prefix='!')
