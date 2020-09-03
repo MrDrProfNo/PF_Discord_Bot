@@ -15,6 +15,13 @@ UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
 bot = commands.Bot(command_prefix='!')
 
 
+async def is_admin(context: commands.Context):
+    user: discord.Member = context.author
+    user_permissions: discord.Permissions = user.permissions_in(context.channel)
+    user_role_names = [role.name for role in iter(user.roles)]
+
+    return user_permissions.administrator or ("admin" in user_role_names)
+
 
 @bot.event
 async def on_connect():
@@ -39,6 +46,7 @@ async def echo(context: commands.Context, *args):
 
 
 @bot.command()
+@commands.check(is_admin)
 async def scrims(context: commands.Context, *args):
     if len(args) > 0:
         await context.send("'!scrims' command does not accept arguments")
