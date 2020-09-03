@@ -2,6 +2,15 @@ import discord
 from discord.ext import commands
 import sys
 
+
+# this value obtained using:
+# import unicodedata
+# unicodedata.name('▶')
+# where ▶ was obtained by escaping the first colon of the emoji text code, and
+# copy-pasting the resultant output.
+UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
+
+
 bot = commands.Bot(command_prefix='!')
 
 
@@ -47,7 +56,18 @@ async def scrims(context: commands.Context, *args):
 
     message_embed.colour = discord.Colour.from_rgb(74, 144, 226)
 
-    await context.send(embed=message_embed)
+    # context.send returns a Message for the content it just sent
+    msg = await context.send(embed=message_embed)
+
+    # Message objects can be manipulated in a variety of ways for interaction
+    # with users
+    await msg.add_reaction(UNICODE_FORWARD_ARROW)
+
+    # TODO: message ID will come in useful later when tracking which message
+    #  was reacted to.
+    print("Message ID: " + str(msg.id))
+
+
 
 
 def main():
