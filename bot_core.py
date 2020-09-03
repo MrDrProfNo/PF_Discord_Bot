@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
 import sys
-from unicode_constants import UNICODE_FORWARD_ARROW
+from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1, \
+    UNICODE_2, UNICODE_3, UNICODE_4, UNICODE_5
 
 
 bot = commands.Bot(command_prefix='!')
@@ -48,9 +49,13 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 
 @bot.command()
 async def echo(context: commands.Context, *args):
-    print(context)
-    print(args)
-    await context.send("args: " + str(args) + "\n", embed="test")
+    output_string = ""
+    for arg in args:
+        output_string += arg + " "
+    if output_string == "":
+        pass
+    else:
+        await context.send(content=output_string)
 
 
 @bot.command()
