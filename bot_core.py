@@ -2,17 +2,15 @@ import discord
 from discord.ext import commands
 import sys
 import unicodedata
+from message_sequences.message_sequence_test import MessageSequenceTest
+from message import UserMessageStates, MessageSequence
 
-
-# this value obtained using:
-# import unicodedata
-# unicodedata.name('▶')
-# where ▶ was obtained by escaping the first colon of the emoji text code, and
-# copy-pasting the resultant output.
+# to get values like this, run !uni <emoji> while the bot is active
 UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
 
 
 bot = commands.Bot(command_prefix='!')
+message_states = UserMessageStates()
 
 
 async def is_admin(context: commands.Context):
@@ -83,14 +81,18 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     print("RAW reaction received")
     user = bot.get_user(payload.user_id)
     print("From user:", user.name, "(" + str(payload.user_id) + ")")
-    print("")
-    emoji = payload.emoji
+
     if not user.bot:
-        print("sent message to:", user.name)
-        await user.send(
-            content="You reacted to an *old* message of mine with {0}"
-            .format(str(emoji))
-        )
+        message_sequence: MessageSequenceTest = message_states.get_user_sequence(user)
+
+        if message_sequence is not None:
+            await message_sequence.run_next_handler(payload)
+        else:
+            message_sequence = MessageSequenceTest()
+
+            await message_states.add_user_sequence(user, message_sequence)
+
+            await message_sequence.run_next_handler(payload)
 
 
 @bot.command()
