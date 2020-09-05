@@ -71,6 +71,10 @@ async def on_message(message: discord.Message):
             content
         ))
 
+    # overwriting on_message stops the bot from processing @bot.command()
+    # functions. So we have to call this instead if we want messages to be
+    # correctly as interpreted as commands.
+    await bot.process_commands(message)
 
 
 
