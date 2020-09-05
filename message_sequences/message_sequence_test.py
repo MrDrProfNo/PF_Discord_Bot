@@ -44,7 +44,7 @@ class MessageSequenceTest(MessageSequence):
         self.value_3 = reaction.emoji
 
         await self.message_three(self.user)
-
+        await self.message_final(self.user)
         self.pass_handler(None)
 
     async def message_one(self, user: User):

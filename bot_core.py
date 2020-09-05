@@ -47,11 +47,6 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     print("username:", str(user.display_name))
     print("user is bot:", str(user.bot))
 
-    # don't send to bots.
-    if not user.bot:
-        print("sent message to:", user.name)
-        await user.send(content="You reacted to me with {0}!".format(reaction))
-
 
 @bot.event
 async def on_message(message: discord.Message):
@@ -143,7 +138,6 @@ async def scrims(context: commands.Context, *args):
 
 @bot.command()
 async def uni(context: commands.Context, emoji, *args):
-    print("uni invoked")
     as_unicode = "\\N{" + unicodedata.name(emoji[0]) + "}"
     reply_string = emoji + ": " + as_unicode
     await context.send(content=reply_string)

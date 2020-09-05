@@ -63,7 +63,6 @@ class UserMessageStates:
         print("Added new message sequence {0} for user {1}, and started it."
               .format(str(type(message_sequence)), user.name))
         self.user_message_states[user.id] = message_sequence
-        await message_sequence.start_sequence(user)
 
     def get_user_sequence(self, user: User):
         if user.id in self.user_message_states.keys():
