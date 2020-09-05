@@ -1,8 +1,5 @@
-# any values here were obtained using:
-# import unicodedata
-# unicodedata.name('▶')
-# where ▶ was obtained by escaping the first colon of the emoji text code, and
-# copy-pasting the resultant output.
+# to get values like this, run !uni <emoji> while the bot is active
+
 UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
 
 UNICODE_1 = "\N{DIGIT ONE}"

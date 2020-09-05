@@ -14,47 +14,34 @@ class MessageSequence:
         print("reached MessageSequence __init__()")
 
         # the message sent to user to start the sequence
-        self.starter = None
+        self.starter: Callable[[User], None] = None
 
-        # array to be filled with function references, which take EITHER a
-        # message OR a Reaction.
-        self.response_handlers: List[Union[Callable[[Message], None],
-                                           Callable[[RawReactionActionEvent], None]]] = []
-
-        # the current handler, element of self.response_handlers. Handlers are
-        # expected to pass control to next handlers when they terminate using
-        # the pass_handler() function.
+        # the current handler. Handlers are expected to pass control to next
+        # handlers when they terminate using the pass_handler() function.
         self.current_handler: Union[Callable[[Message], None],
-                                    Callable[[RawReactionActionEvent], None]] = None
+                                    Callable[[RawReactionActionEvent], None]] \
+            = None
 
-    def pass_handler(self) -> None:
+        self.current_message: Message = None
+
+        # if this is a PM, the User involved (can be set via the Starter)
+        self.user = None
+
+        # TODO: if there need to be message sequences in public channels, the
+        #  channel would be stored here.
+
+    def pass_handler(self, next_handler: Callable) -> None:
         """
-        Whatever the current handler is, move on to the next one.
-        Handlers MUST call this method when they're finished
+        Passes the control of the sequence on to the next handler function.
+        Handlers MUST pass control to the next handler when they finish. If a
+        handler is the last one, it can pass None instead.
         :return: None
         """
+        self.current_handler = next_handler
 
-        # Starter function works a bit differently and can't be included in the
-        # list, so just special case for continuing after it
-        if self.current_handler is None:
-            self.current_handler = self.response_handlers[0]
-            return
-
-        # get the position of the current handler in the list.
-        pos = self.response_handlers.index(self.current_handler)
-
-        # if we're at the end of the handlers...
-        if pos > len(self.response_handlers):
-
-            # condition flags end of handler
-            self.current_handler = None
-        else:
-
-            # move to the next handler, thus advancing the message chain.
-            self.current_handler = self.response_handlers[pos + 1]
-
-    async def run_next_handler(self, arg: Union[Message, RawReactionActionEvent]):
-        if self.current_handler:
+    async def run_next_handler(self, arg: Union[Message, RawReactionActionEvent])\
+            -> None:
+        if self.current_handler is not None:
             await self.current_handler(arg)
         else:
             print("Sequence has no more messages")

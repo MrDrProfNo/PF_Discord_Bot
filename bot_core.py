@@ -4,9 +4,7 @@ import sys
 import unicodedata
 from message_sequences.message_sequence_test import MessageSequenceTest
 from message import UserMessageStates, MessageSequence
-
-# to get values like this, run !uni <emoji> while the bot is active
-UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
+from unicode_constants import UNICODE_FORWARD_ARROW
 
 
 bot = commands.Bot(command_prefix='!')
@@ -92,7 +90,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 
             await message_states.add_user_sequence(user, message_sequence)
 
-            await message_sequence.run_next_handler(payload)
+            await message_sequence.start_sequence(user)
 
 
 @bot.command()
@@ -141,6 +139,7 @@ async def scrims(context: commands.Context, *args):
 
 @bot.command()
 async def uni(context: commands.Context, emoji, *args):
+    print("uni invoked")
     as_unicode = "\\N{" + unicodedata.name(emoji[0]) + "}"
     reply_string = emoji + ": " + as_unicode
     await context.send(content=reply_string)
