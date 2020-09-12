@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import Message
 import sys
 import unicodedata
 from message_sequences.message_sequence_test import MessageSequenceTest
@@ -66,11 +67,17 @@ async def on_message(message: discord.Message):
             content
         ))
 
+        message_sequence: MessageSequenceTest \
+            = message_states.get_user_sequence(message.author)
+
+        if message_sequence is not None:
+            await message_sequence.run_next_handler(message)
+
+
     # overwriting on_message stops the bot from processing @bot.command()
     # functions. So we have to call this instead if we want messages to be
     # correctly as interpreted as commands.
     await bot.process_commands(message)
-
 
 
 @bot.event
@@ -79,16 +86,25 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     user = bot.get_user(payload.user_id)
     print("From user:", user.name, "(" + str(payload.user_id) + ")")
 
-    if not user.bot:
-        message_sequence: MessageSequenceTest = message_states.get_user_sequence(user)
+    # Looks like all possible send targets inherit from Messageable, and EITHER
+    # GuildChannel or PrivateChannel (all 3 of which are in discord.abc)
+    print("payload channel: {}".format(payload.channel_id))
+    channel: discord.abc.Messageable = bot.get_channel(payload.channel_id)
+    message: Message = await channel.fetch_message(payload.message_id)
 
+    if not user.bot:
+        message_sequence: MessageSequenceTest \
+            = message_states.get_user_sequence(user)
+
+        # if the user has a sequence with the bot already...
         if message_sequence is not None:
-            await message_sequence.run_next_handler(payload)
+            # pass the message along to the sequence's handler
+            await message_sequence.run_next_handler(message)
+        # no sequence with bot yet...
         else:
             message_sequence = MessageSequenceTest()
 
             await message_states.add_user_sequence(user, message_sequence)
-
             await message_sequence.start_sequence(user)
 
 
