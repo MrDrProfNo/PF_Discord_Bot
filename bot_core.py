@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import sys
 import unicodedata
+from sqlalchemy.ext.declarative import declarative_base
 
 
 # this value obtained using:
@@ -13,6 +14,7 @@ UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
 
 
 bot = commands.Bot(command_prefix='!')
+Base = declarative_base()
 
 
 async def is_admin(context: commands.Context):
