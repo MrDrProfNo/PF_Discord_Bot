@@ -2,7 +2,9 @@ import discord
 from discord.ext import commands
 import sys
 import unicodedata
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
 
 
 # this value obtained using:
@@ -12,9 +14,11 @@ from sqlalchemy.ext.declarative import declarative_base
 # copy-pasting the resultant output.
 UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
 
-
 bot = commands.Bot(command_prefix='!')
 Base = declarative_base()
+engine = create_engine('sqlite:///:memory:', echo=True)
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
 async def is_admin(context: commands.Context):
