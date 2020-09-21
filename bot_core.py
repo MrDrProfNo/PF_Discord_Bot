@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import Message
 import sys
 import unicodedata
-from message_sequences.message_sequence_test import MessageSequenceTest
+from message_sequences.message_sequence_example import MessageSequenceTest
 from message import UserMessageStates, MessageSequence
 from unicode_constants import UNICODE_FORWARD_ARROW
 
@@ -102,10 +102,10 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
             await message_sequence.run_next_handler(message)
         # no sequence with bot yet...
         else:
-            message_sequence = MessageSequenceTest()
+            message_sequence = MessageSequenceTest(user)
 
             await message_states.add_user_sequence(user, message_sequence)
-            await message_sequence.start_sequence(user)
+            await message_sequence.start_sequence()
 
 
 @bot.command()
