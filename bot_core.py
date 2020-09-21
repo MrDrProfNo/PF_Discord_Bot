@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from message_sequences.message_sequence_example import MessageSequenceTest
-from message import UserMessageStates, MessageSequence
+from message import UserMessageStates
 from unicode_constants import UNICODE_FORWARD_ARROW
 
 bot = commands.Bot(command_prefix='!')

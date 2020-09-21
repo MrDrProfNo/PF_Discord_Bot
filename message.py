@@ -1,6 +1,6 @@
 from discord import Message, User, Reaction, DMChannel
 from discord.abc import Messageable
-from typing import List, Callable
+from typing import List, Callable, Union
 
 
 class MessageSequence:
@@ -62,7 +62,7 @@ class MessageSequence:
         # TODO: if there need to be message sequences in public channels, the
         #  channel would be stored here instead of a User.
 
-    def pass_handler(self, next_handler: Callable) -> None:
+    def pass_handler(self, next_handler: Union[Callable, None]) -> None:
         """
         Passes the control of the sequence on to the next handler function.
         Handlers MUST pass control to the next handler when they finish. If a
@@ -117,6 +117,16 @@ class MessageSequence:
         """
 
         async def internal_call(self, message: Message):
+            """
+            locally defined function is part of making a decorator.
+            :param self: MessageSequence, required to allow calling on specific
+            MessageSequence in a static context.
+
+            :param message: Message the bot is answering; this function's checks
+            guarantee context for it, so no context is guaranteed at this point.
+
+            :return: handler, decorated with this function.
+            """
 
             # if the message is the last one this bot sent (assuming that the
             # last handler updated self.current_message properly)...
@@ -147,6 +157,16 @@ class MessageSequence:
         :return: copy of function decorated with internal_call
         """
         async def internal_call(self, message: Message):
+            """
+            locally defined function is part of making a decorator.
+            :param self: MessageSequence, required to allow calling on specific
+            MessageSequence in a static context.
+
+            :param message: Message the bot is answering; this function's checks
+            guarantee context for it, so no context is guaranteed at this point.
+
+            :return: handler, decorated with this function.
+            """
 
             channel: Messageable = message.channel
             hist_list = await channel.history(limit=1).flatten()

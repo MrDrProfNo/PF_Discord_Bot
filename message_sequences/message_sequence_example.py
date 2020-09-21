@@ -72,10 +72,23 @@ class MessageSequenceTest(MessageSequence):
 
     @MessageSequence.requires_reaction
     async def handler_react_reply(self, message: Message):
+        """
+        Invoked only if the user reacts to the most recent message.
+
+        Only *does* anything if they react to 2/4 of the replies. This is done
+        by just returning if there are the wrong number of reactions, and not
+        calling pass_handler() or changing current_message, thus retaining
+        control and context required. Or, in short, not doing anything unless
+        the conditions are correct.
+
+        :param message: Message that reactions were applied to; guaranteed to be
+        self.current_message.
+        :return: None
+        """
         added_reactions: List[Reaction] \
             = MessageSequence.get_reactions_added(message)
         if len(added_reactions) != 2:
-            # if there's no
+            # if there are not the correct number of reactions, return.
             return
         else:
             msg_title = "The \"reaction to a reaction\" message"
