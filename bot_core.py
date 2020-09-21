@@ -1,20 +1,21 @@
 import discord
 from discord.ext import commands
+from discord import Message
 import sys
 import unicodedata
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
-
-
-# this value obtained using:
-# import unicodedata
-# unicodedata.name('▶')
-# where ▶ was obtained by escaping the first colon of the emoji text code, and
-# copy-pasting the resultant output.
-UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
+from message_sequences.message_sequence_example import MessageSequenceTest
+from message import UserMessageStates
+from unicode_constants import UNICODE_FORWARD_ARROW
 
 bot = commands.Bot(command_prefix='!')
+
+# message sequence related code
+message_states = UserMessageStates()
+
+# db related code
 Base = declarative_base()
 engine = create_engine('sqlite:///:memory:', echo=True)
 Session = sessionmaker(bind=engine)
@@ -57,10 +58,36 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     print("username:", str(user.display_name))
     print("user is bot:", str(user.bot))
 
-    # don't send to bots.
-    if not user.bot:
-        print("sent message to:", user.name)
-        await user.send(content="You reacted to me with {0}!".format(reaction))
+
+@bot.event
+async def on_message(message: discord.Message):
+    if not message.author.bot:
+        author_name = message.author.name
+        channel: discord.TextChannel = message.channel
+
+        if type(channel) == discord.TextChannel:
+            channel_name = channel.name
+        else:
+            channel_name = "DM"
+
+        content = message.content
+        print("{0}({1}): {2}".format(
+            author_name,
+            channel_name,
+            content
+        ))
+
+        message_sequence: MessageSequenceTest \
+            = message_states.get_user_sequence(message.author)
+
+        if message_sequence is not None:
+            await message_sequence.run_next_handler(message)
+
+
+    # overwriting on_message stops the bot from processing @bot.command()
+    # functions. So we have to call this instead if we want messages to be
+    # correctly as interpreted as commands.
+    await bot.process_commands(message)
 
 
 @bot.event
@@ -68,14 +95,27 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     print("RAW reaction received")
     user = bot.get_user(payload.user_id)
     print("From user:", user.name, "(" + str(payload.user_id) + ")")
-    print("")
-    emoji = payload.emoji
+
+    # Looks like all possible send targets inherit from Messageable, and EITHER
+    # GuildChannel or PrivateChannel (all 3 of which are in discord.abc)
+    print("payload channel: {}".format(payload.channel_id))
+    channel: discord.abc.Messageable = bot.get_channel(payload.channel_id)
+    message: Message = await channel.fetch_message(payload.message_id)
+
     if not user.bot:
-        print("sent message to:", user.name)
-        await user.send(
-            content="You reacted to an *old* message of mine with {0}"
-            .format(str(emoji))
-        )
+        message_sequence: MessageSequenceTest \
+            = message_states.get_user_sequence(user)
+
+        # if the user has a sequence with the bot already...
+        if message_sequence is not None:
+            # pass the message along to the sequence's handler
+            await message_sequence.run_next_handler(message)
+        # no sequence with bot yet...
+        else:
+            message_sequence = MessageSequenceTest(user)
+
+            await message_states.add_user_sequence(user, message_sequence)
+            await message_sequence.start_sequence()
 
 
 @bot.command()
