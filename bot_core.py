@@ -3,13 +3,23 @@ from discord.ext import commands
 from discord import Message
 import sys
 import unicodedata
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
 from message_sequences.message_sequence_example import MessageSequenceTest
 from message import UserMessageStates, MessageSequence
 from unicode_constants import UNICODE_FORWARD_ARROW
 
-
 bot = commands.Bot(command_prefix='!')
+
+# message sequence related code
 message_states = UserMessageStates()
+
+# db related code
+Base = declarative_base()
+engine = create_engine('sqlite:///:memory:', echo=True)
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
 async def is_admin(context: commands.Context):
