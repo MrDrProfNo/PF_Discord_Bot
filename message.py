@@ -106,6 +106,15 @@ class MessageSequence:
         """
         return self.current_handler is None
 
+    async def is_finished(self) -> bool:
+        """
+        Technically duplicate of is_started. Needs a better way to distinguish
+        the two possible states, since both are flagged by the current_handler
+        being None.
+        :return:
+        """
+        return self.current_handler is None
+
     @staticmethod
     def requires_reaction(handler):
         """
