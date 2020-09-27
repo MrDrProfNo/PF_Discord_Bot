@@ -3,9 +3,10 @@ from sqlalchemy.orm import relationship
 from bot_core import Base
 
 user_team_association = Table('user_team_association', Base.metadata,
-                                    Column('user_id', Integer, ForeignKey('users.id')),
-                                    Column('team_id', Integer, ForeignKey('teams.id'))
-                                    )
+                              Column('user_id', Integer, ForeignKey('users.id')),
+                              Column('team_id', Integer, ForeignKey('teams.id'))
+                              )
+
 
 # Defines the unique user based on unique discord id
 class User(Base):
