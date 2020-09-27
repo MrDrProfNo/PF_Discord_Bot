@@ -15,7 +15,10 @@ class GameMode(Enum):
     RANDOM4V4 = (8, [4, 4], True, "3v3 Random Teams")
     RANDOM2V2V2 = (6, [2, 2, 2], True, "2v2v2 Random Teams")
     RANDOM2V2V2V2 = (8, [2, 2, 2, 2], True, "2v2v2v2 Random Teams")
+    AI = (0, [], False, "vs AI")
 
     def __init__(self, player_num, teams, random, name):
         self.player_num = player_num
         self.teams = teams
+        self.random = random
+        self.name = name

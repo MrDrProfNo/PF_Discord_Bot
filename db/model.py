@@ -74,11 +74,19 @@ class Team(Base):
 
 # Not the best solution, but this is the table to report results
 class GameResult(Base):
-    __tablename__ = 'result'
+    __tablename__ = 'results'
     id = Column(Integer, primary_key=True)
     winners_id = Column(Integer, ForeignKey('teams.id'))
     winners = relationship('Team', back_populates='result')
     mode_id = Column(Integer, ForeignKey('modes.id'))
     mode = relationship('Mode', back_populates='games_by_mode')
+
+
+# We need to persist various properties/settings as well. We just keep it as key/value pairs
+class Property(Base):
+    __tablename__ = 'properties'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    value = Column(String)
 
 # TODO: Add the actual result reporting (don't know how are we going to do it yet
