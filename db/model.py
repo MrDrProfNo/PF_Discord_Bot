@@ -13,7 +13,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     did = Column(Integer)
     players = relationship("UserGameRelation", back_populates='user')
-    teams = relationship("User", secondary=user_team_association_table, back_populates="users")
+    teams = relationship("User", secondary=user_team_association, back_populates="users")
     # Here be something else we want to store about the user
 
 
