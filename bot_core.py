@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from message_sequences.message_sequence_example import MessageSequenceTest
+from message_sequences.new_game_sequence import NewGameSequence
 from message import UserMessageStates, MessageSequence
 from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1
 
@@ -192,6 +193,27 @@ async def demo(context: commands.Context, *args):
             + "Finished" if message_sequence.is_finished() else "Not Finished"
         )
     message_sequence = MessageSequenceTest(user)
+
+    await message_states.add_user_sequence(user, message_sequence)
+    await message_sequence.start_sequence()
+
+
+@bot.command()
+async def newgame(context: commands.Context, *args):
+    if len(args) > 0:
+        await context.send(content="newgame accepts no arguments")
+        return
+
+    print("started newgame")
+
+    user: User = context.message.author
+    message_sequence: MessageSequence = message_states.get_user_sequence(user)
+    if message_sequence:
+        await context.send(
+            "Overwriting previous MessageSequence, which was: "
+            + "Finished" if message_sequence.is_finished() else "Not Finished"
+        )
+    message_sequence = NewGameSequence(user)
 
     await message_states.add_user_sequence(user, message_sequence)
     await message_sequence.start_sequence()
