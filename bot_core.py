@@ -14,7 +14,11 @@ bot = commands.Bot(command_prefix='!')
 message_states = UserMessageStates()
 
 # db related code
-database = DatabaseFacade(connection_string='sqlite:///:memory:')
+if len(sys.argv) == 3:
+    database = DatabaseFacade(connection_string=sys.argv[2])
+else:
+    print("Incorrect number of args; requires connection string in position 2")
+    exit()
 
 
 async def is_admin(context: commands.Context):
@@ -79,7 +83,7 @@ async def on_message(message: discord.Message):
             await message_sequence.run_next_handler(message)
 
 
-    # overwriting on_message stops the bot from processing @bot.command()
+    # overriding on_message stops the bot from processing @bot.command()
     # functions. So we have to call this instead if we want messages to be
     # correctly as interpreted as commands.
     await bot.process_commands(message)
