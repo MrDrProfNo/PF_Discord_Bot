@@ -3,12 +3,10 @@ from discord.ext import commands
 from discord import Message
 import sys
 import unicodedata
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
 from message_sequences.message_sequence_example import MessageSequenceTest
 from message import UserMessageStates
 from unicode_constants import UNICODE_FORWARD_ARROW
+from db.dbfacade import DatabaseFacade
 
 bot = commands.Bot(command_prefix='!')
 
@@ -16,10 +14,7 @@ bot = commands.Bot(command_prefix='!')
 message_states = UserMessageStates()
 
 # db related code
-Base = declarative_base()
-engine = create_engine('sqlite:///:memory:', echo=True)
-Session = sessionmaker(bind=engine)
-session = Session()
+database = DatabaseFacade(connection_string='sqlite:///:memory:')
 
 
 async def is_admin(context: commands.Context):
