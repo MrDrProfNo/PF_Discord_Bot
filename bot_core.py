@@ -168,6 +168,13 @@ async def uni(context: commands.Context, emoji, *args):
     await context.send(content=reply_string)
 
 
+@bot.command()
+async def reg(context: commands.Context, *args):
+    print("reg invoked")
+    user = context.message.author
+    user_did = str(user.id)
+    database.add_user(user.name, user_did)
+
 def main():
     if len(sys.argv) < 2:
         print(

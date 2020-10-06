@@ -14,7 +14,8 @@ user_team_association = Table('user_team_association', Base.metadata,
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    did = Column(Integer)
+    name = Column(String)
+    did = Column(String)
     teams = relationship("Team", secondary=user_team_association, back_populates="users")
     games = relationship("Game")
     # Here be something else we want to store about the user
@@ -36,8 +37,8 @@ class Game(Base):
     created_at = Column(DateTime)
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
-    message_did = Column(Integer)
-    game_message_did = Column(Integer)
+    message_did = Column(String)
+    game_message_did = Column(String)
     player_number = Column(Integer)
     teams_available = Column(Boolean)
     randomize_teams = Column(Boolean)

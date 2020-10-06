@@ -1,6 +1,6 @@
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Query
 from sqlalchemy import create_engine
-from db.model import Base, Platform, State, Mode
+from db.model import Base, Platform, State, Mode, User
 from game_modes import GameMode
 
 
@@ -42,5 +42,16 @@ class DatabaseFacade:
 
         self.session.commit()
 
+    def add_user(self, user_name: str, user_did: str):
+        print("inserting user with did {}".format(user_did))
+        user_check: Query = self.session.query(User).filter_by(did=user_did)
+        if user_check.count() > 0:
+            print("user already registered")
+        else:
+            db_user = User()
+            db_user.did = user_did
+            db_user.name = user_name
+            self.session.add(db_user)
+            self.session.commit()
 
 
