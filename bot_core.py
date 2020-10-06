@@ -3,13 +3,11 @@ from discord.ext import commands
 from discord import Message, Emoji, User
 import sys
 import unicodedata
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
 from message_sequences.message_sequence_example import MessageSequenceTest
 from message_sequences.new_game_sequence import NewGameSequence
 from message import UserMessageStates, MessageSequence
 from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1
+from db.dbfacade import DatabaseFacade
 
 bot = commands.Bot(command_prefix='!')
 
@@ -17,10 +15,11 @@ bot = commands.Bot(command_prefix='!')
 message_states = UserMessageStates()
 
 # db related code
-Base = declarative_base()
-engine = create_engine('sqlite:///:memory:', echo=True)
-Session = sessionmaker(bind=engine)
-session = Session()
+if len(sys.argv) == 3:
+    database = DatabaseFacade(connection_string=sys.argv[2])
+else:
+    print("Incorrect number of args; requires connection string in position 2")
+    exit()
 
 
 async def is_admin(context: commands.Context):
@@ -86,7 +85,7 @@ async def on_message(message: discord.Message):
             await message_sequence.run_next_handler(message)
 
 
-    # overwriting on_message stops the bot from processing @bot.command()
+    # overriding on_message stops the bot from processing @bot.command()
     # functions. So we have to call this instead if we want messages to be
     # correctly as interpreted as commands.
     await bot.process_commands(message)
