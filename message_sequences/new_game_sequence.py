@@ -96,7 +96,6 @@ class NewGameSequence(MessageSequence):
             )
             return
 
-
         if team_count > 0:
             await self.team_size_message()
             self.pass_handler(self.team_size_handler)
