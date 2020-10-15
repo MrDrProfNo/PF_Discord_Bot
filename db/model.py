@@ -15,7 +15,7 @@ class Player(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     did = Column(String)
-    teams = relationship("Team", secondary=user_team_association, back_populates="users")
+    teams = relationship("Team", secondary=user_team_association, back_populates="players")
     games = relationship("Game")
     # Here be something else we want to store about the user
 
@@ -76,7 +76,7 @@ class Team(Base):
     size = Column(Integer)
     game_id = Column(Integer, ForeignKey('games.id'))
     game = relationship('Game', back_populates='teams')
-    users = relationship("User", secondary=user_team_association, back_populates="teams")
+    players = relationship("Player", secondary=user_team_association, back_populates="teams")
 
 
 # Not the best solution, but this is the table to report results

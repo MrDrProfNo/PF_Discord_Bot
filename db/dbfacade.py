@@ -1,7 +1,9 @@
 from sqlalchemy.orm import sessionmaker, Query
 from sqlalchemy import create_engine
-from db.model import Base, Platform, State, Mode, Player, Game
+import sqlalchemy
+from db.model import Base, Platform, State, Mode, Player, Game, Team
 from game_modes import GameMode
+
 
 
 class DatabaseFacade:
@@ -58,35 +60,68 @@ class DatabaseFacade:
         else:
             return query_result.first()
 
-    def add_game(self, creator_did: int, platform: str):
+    def add_game(self, creator_did: str, platform: str, mode: str,
+                 message_did: str):
 
-        # channel_id = Column(Integer)
-        # channel_id = ????
+        new_game = Game()
 
         # state_id = Column(Integer, ForeignKey('states.id'))
         # state = relationship('State', back_populates='games')
         state = "WAITING"
-        state_id_query: Query = self.session.query(State).filter_by(name=state)
-        state_id = state_id_query.first().id
+        state_query: Query = self.session.query(State).filter_by(name=state)
+        new_game.state_id = state_query.first().id
 
         # creator = relationship('User', back_populates='games')
         # creator_id = Column(Integer, ForeignKey('users.id'))
-        creator_id = self.get_player_by_did(creator_did).id
+        new_game.creator_id = self.get_player_by_did(creator_did).id
 
         # platform_id = Column(Integer, ForeignKey('platforms.id'))
         # platform = relationship('Platform', back_populates='games')
+        platform_query = self.session.query(Platform).filter_by(name=platform)
+        new_game.platform_id = platform_query.first().id
+
         # mode_id = Column(Integer, ForeignKey('modes.id'))
         # mode = relationship('Mode', back_populates='games')
+        mode_query = self.session.query(Mode).filter_by(name=mode)
+        new_game.mode_id = mode_query.first().id
+
         # created_at = Column(DateTime)
+        new_game.created_at = sqlalchemy.func.now()
+
         # started_at = Column(DateTime)
         # finished_at = Column(DateTime)
+        # NOT ASSIGNED NOW
+
         # message_did = Column(String)
         # game_message_did = Column(String)
+        new_game.message_did = message_did
+
         # player_number = Column(Integer)
+        new_game.player_number = 0
+
         # teams_available = Column(Boolean)
+        new_game.teams_available = True
+
         # randomize_teams = Column(Boolean)
-        # teams = relationship('Team')
-        self.session.add(game)
+        new_game.randomize_teams = mode[2]
+
+        self.session.add(new_game)
         self.session.commit()
 
+        team0 = Team()
+        team0.number = 0
+        team0.size = 12
+        team0.game_id = new_game.id
+        team0.players.append(new_game.creator_id)
+        self.session.add(team0)
 
+        # iterates over team sizes from the mode, and adjusts to 1-index
+        for team_number in range(0, len(mode[1]) + 1):
+            team = Team()
+            team.number = team_number
+            team.size = mode[1][team_number]
+            team.game_id = new_game.id
+
+            self.session.add(team)
+
+        self.session.commit()
