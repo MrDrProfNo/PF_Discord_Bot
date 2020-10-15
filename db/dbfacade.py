@@ -44,28 +44,6 @@ class DatabaseFacade:
 
         self.session.commit()
 
-    def get_player_by_did(self, player_did: int, player_name: str) -> Player:
-        query_result: Query = self.session.query(Player).filter_by(did=player_did)
-
-        if query_result.count() == 0:
-            new_user = Player()
-            new_user.did = player_did
-            new_user.name = player_name
-            self.session.add(new_user)
-            self.session.commit()
-            return new_user
-        elif query_result.count() >= 0:
-            print("ERROR: Duplicate User Discord ID in Database: {}, {}".format(
-                player_did,
-                player_name
-            ))
-        else:
-            return query_result.first()
-
-    def add_game(self, game: Game):
-        self.session.add(game)
-        self.session.commit()
-
     def get_player_by_did(self, player_did: int) -> Player:
         query_result: Query = self.session.query(Player).filter_by(did=player_did)
 
