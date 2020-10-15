@@ -1,6 +1,6 @@
 from sqlalchemy.orm import sessionmaker, Query
 from sqlalchemy import create_engine
-from db.model import Base, Platform, State, Mode, User
+from db.model import Base, Platform, State, Mode, User, Game
 from game_modes import GameMode
 
 
@@ -42,16 +42,26 @@ class DatabaseFacade:
 
         self.session.commit()
 
-    def add_user(self, user_name: str, user_did: str):
-        print("inserting user with did {}".format(user_did))
-        user_check: Query = self.session.query(User).filter_by(did=user_did)
-        if user_check.count() > 0:
-            print("user already registered")
-        else:
-            db_user = User()
-            db_user.did = user_did
-            db_user.name = user_name
-            self.session.add(db_user)
+    def get_user_by_did(self, user_did: int, user_name: str) -> User:
+        query_result: Query = self.session.query(User).filter_by(did=user_did)
+
+        if query_result.count() == 0:
+            new_user = User()
+            new_user.did = user_did
+            new_user.name = user_name
+            self.session.add(new_user)
             self.session.commit()
+            return new_user
+        elif query_result.count() >= 0:
+            print("ERROR: Duplicate User Discord ID in Database: {}, {}".format(
+                user_did,
+                user_name
+            ))
+        else:
+            return query_result.first()
+
+    def add_game(self, game: Game):
+        self.session.add(game)
+        self.session.commit()
 
 
