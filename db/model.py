@@ -11,7 +11,7 @@ user_team_association = Table('user_team_association', Base.metadata,
 
 
 # Defines the unique user based on unique discord id
-class User(Base):
+class Player(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     did = Column(Integer)
