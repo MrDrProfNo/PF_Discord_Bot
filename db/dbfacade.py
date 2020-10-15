@@ -42,25 +42,50 @@ class DatabaseFacade:
 
         self.session.commit()
 
-    def get_player_by_did(self, player_did: int, player_name: str) -> Player:
+    def get_player_by_did(self, player_did: int) -> Player:
         query_result: Query = self.session.query(Player).filter_by(did=player_did)
 
         if query_result.count() == 0:
             new_user = Player()
             new_user.did = player_did
-            new_user.name = player_name
             self.session.add(new_user)
             self.session.commit()
             return new_user
         elif query_result.count() >= 0:
-            print("ERROR: Duplicate User Discord ID in Database: {}, {}".format(
+            print("ERROR: Duplicate User Discord ID in Database: {}".format(
                 player_did,
-                player_name
             ))
         else:
             return query_result.first()
 
-    def add_game(self, game: Game):
+    def add_game(self, creator_did: int, platform: str):
+
+        # channel_id = Column(Integer)
+        # channel_id = ????
+
+        # state_id = Column(Integer, ForeignKey('states.id'))
+        # state = relationship('State', back_populates='games')
+        state = "WAITING"
+        state_id_query: Query = self.session.query(State).filter_by(name=state)
+        state_id = state_id_query.first().id
+
+        # creator = relationship('User', back_populates='games')
+        # creator_id = Column(Integer, ForeignKey('users.id'))
+        creator_id = self.get_player_by_did(creator_did).id
+
+        # platform_id = Column(Integer, ForeignKey('platforms.id'))
+        # platform = relationship('Platform', back_populates='games')
+        # mode_id = Column(Integer, ForeignKey('modes.id'))
+        # mode = relationship('Mode', back_populates='games')
+        # created_at = Column(DateTime)
+        # started_at = Column(DateTime)
+        # finished_at = Column(DateTime)
+        # message_did = Column(String)
+        # game_message_did = Column(String)
+        # player_number = Column(Integer)
+        # teams_available = Column(Boolean)
+        # randomize_teams = Column(Boolean)
+        # teams = relationship('Team')
         self.session.add(game)
         self.session.commit()
 

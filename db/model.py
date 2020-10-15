@@ -14,7 +14,6 @@ user_team_association = Table('user_team_association', Base.metadata,
 class Player(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    name = Column(String)
     did = Column(String)
     teams = relationship("Team", secondary=user_team_association, back_populates="users")
     games = relationship("Game")
