@@ -4,20 +4,20 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-user_team_association = Table('user_team_association', Base.metadata,
-                              Column('user_id', Integer, ForeignKey('users.id')),
+player_team_association = Table('player_team_association', Base.metadata,
+                              Column('player_id', Integer, ForeignKey('players.id')),
                               Column('team_id', Integer, ForeignKey('teams.id'))
                               )
 
 
-# Defines the unique user based on unique discord id
+# Defines the unique player based on unique discord id
 class Player(Base):
-    __tablename__ = 'users'
+    __tablename__ = 'players'
     id = Column(Integer, primary_key=True)
     did = Column(String)
-    teams = relationship("Team", secondary=user_team_association, back_populates="players")
+    teams = relationship("Team", secondary=player_team_association, back_populates="players")
     games = relationship("Game")
-    # Here be something else we want to store about the user
+    # Here be something else we want to store about the player
 
 
 # Defines the game
@@ -27,8 +27,8 @@ class Game(Base):
     channel_id = Column(Integer)
     state_id = Column(Integer, ForeignKey('states.id'))
     state = relationship('State', back_populates='games')
-    creator_id = Column(Integer, ForeignKey('users.id'))
-    creator = relationship('User', back_populates='games')
+    creator_id = Column(Integer, ForeignKey('players.id'))
+    creator = relationship('Player', back_populates='games')
     platform_id = Column(Integer, ForeignKey('platforms.id'))
     platform = relationship('Platform', back_populates='games')
     mode_id = Column(Integer, ForeignKey('modes.id'))
@@ -42,6 +42,17 @@ class Game(Base):
     teams_available = Column(Boolean)
     randomize_teams = Column(Boolean)
     teams = relationship('Team')
+
+    def __str__(self):
+        teams_list_str = [str(team) for team in self.teams]
+
+        team_str = "\n".join(teams_list_str)
+
+        return f"creator_did: {self.creator.did} \
+                \nmode: {self.mode.name} \
+                \nplatform: {self.platform.name} \
+                \ncreated_at: {self.created_at} \
+                \nteams:\n{team_str}"
 
 
 # Defines the game state (WAITING, IN PROGRESS, FINISHED, CANCELLED)
@@ -76,7 +87,11 @@ class Team(Base):
     size = Column(Integer)
     game_id = Column(Integer, ForeignKey('games.id'))
     game = relationship('Game', back_populates='teams')
-    players = relationship("Player", secondary=user_team_association, back_populates="teams")
+    players = relationship("Player", secondary=player_team_association, back_populates="teams")
+
+    def __str__(self):
+        return (f"Team{{id={self.id}, number={self.number}, size={self.size},"
+                "game_id={self.game_id}, playercount={len(self.players)}}}")
 
 
 # Not the best solution, but this is the table to report results

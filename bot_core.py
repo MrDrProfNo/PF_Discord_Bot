@@ -7,6 +7,9 @@ from message_sequences.message_sequence_example import MessageSequenceTest
 from message import UserMessageStates
 from unicode_constants import UNICODE_FORWARD_ARROW
 from db.dbfacade import DatabaseFacade
+from db.model import Game
+from game_modes import GameMode
+
 
 bot = commands.Bot(command_prefix='!')
 
@@ -169,17 +172,50 @@ async def uni(context: commands.Context, emoji, *args):
 
 
 @bot.command()
-async def reg(context: commands.Context, *args):
-    print("reg invoked")
-    user = context.message.author
-    user_did = str(user.id)
-    database.add_user(user.name, user_did)
+async def newgame(context: commands.Context, platform: str,
+                  mode_str: str):
+
+    message_did = str(context.message.id)
+    creator_did = str(context.message.author.id)
+
+    mode = None
+
+    for mode_pair in GameMode:
+        if mode_pair.value[3] == mode_str:
+            mode = mode_pair.value
+
+    if mode is None:
+        await context.send(f"Unrecognized mode: {mode_str}")
+        return
+
+    await context.send("Received request for new game with platform={}, mode={}"
+                       .format(platform, mode_str))
+
+    game: Game = database.add_game(creator_did=creator_did, platform=platform,
+                                   mode=mode, message_did=message_did)
+
+    await context.send("Game created:\n" + str(game))
+
+
+@bot.command()
+async def game(context: commands.Context, game_id: str):
+    try:
+        game_id = int(game_id)
+    except ValueError:
+        await context.send("usage: !game <game_id>")
+        return
+
+    retrieved_game = database.get_game(game_id)
+    await context.send("Game loaded:\n" + str(retrieved_game))
+    return
+
 
 def main():
     if len(sys.argv) < 2:
         print(
             "Bot token must be passed as command line argument.\nIf you don't "
-            "have the bot token yet, ask MrNo")
+            "have the bot token yet, ask MrNo"
+        )
         exit()
 
     bot_token = sys.argv[1]

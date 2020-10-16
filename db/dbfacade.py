@@ -44,7 +44,7 @@ class DatabaseFacade:
 
         self.session.commit()
 
-    def get_player_by_did(self, player_did: int) -> Player:
+    def get_player_by_did(self, player_did: str) -> Player:
         query_result: Query = self.session.query(Player).filter_by(did=player_did)
 
         if query_result.count() == 0:
@@ -53,15 +53,18 @@ class DatabaseFacade:
             self.session.add(new_user)
             self.session.commit()
             return new_user
-        elif query_result.count() >= 0:
+        elif query_result.count() >= 2:
             print("ERROR: Duplicate User Discord ID in Database: {}".format(
                 player_did,
             ))
+            return
         else:
             return query_result.first()
 
     def add_game(self, creator_did: str, platform: str, mode: str,
                  message_did: str):
+
+        creator: Player = self.get_player_by_did(creator_did)
 
         new_game = Game()
 
@@ -73,7 +76,7 @@ class DatabaseFacade:
 
         # creator = relationship('User', back_populates='games')
         # creator_id = Column(Integer, ForeignKey('users.id'))
-        new_game.creator_id = self.get_player_by_did(creator_did).id
+        new_game.creator_id = creator.id
 
         # platform_id = Column(Integer, ForeignKey('platforms.id'))
         # platform = relationship('Platform', back_populates='games')
@@ -82,7 +85,7 @@ class DatabaseFacade:
 
         # mode_id = Column(Integer, ForeignKey('modes.id'))
         # mode = relationship('Mode', back_populates='games')
-        mode_query = self.session.query(Mode).filter_by(name=mode)
+        mode_query = self.session.query(Mode).filter_by(name=mode[3])
         new_game.mode_id = mode_query.first().id
 
         # created_at = Column(DateTime)
@@ -112,16 +115,21 @@ class DatabaseFacade:
         team0.number = 0
         team0.size = 12
         team0.game_id = new_game.id
-        team0.players.append(new_game.creator_id)
+        team0.players.append(creator)
         self.session.add(team0)
 
         # iterates over team sizes from the mode, and adjusts to 1-index
-        for team_number in range(0, len(mode[1]) + 1):
+        for team_number in range(0, len(mode[1])):
             team = Team()
-            team.number = team_number
+            team.number = team_number + 1
             team.size = mode[1][team_number]
             team.game_id = new_game.id
 
             self.session.add(team)
 
         self.session.commit()
+
+        return new_game
+
+    def get_game(self, game_id):
+        return self.session.query(Game).filter_by(id=game_id).first()
