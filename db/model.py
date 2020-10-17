@@ -91,7 +91,7 @@ class Team(Base):
 
     def __str__(self):
         return (f"Team{{id={self.id}, number={self.number}, size={self.size},"
-                "game_id={self.game_id}, playercount={len(self.players)}}}")
+                f"game_id={self.game_id}, playercount={len(self.players)}}}")
 
 
 # Not the best solution, but this is the table to report results
