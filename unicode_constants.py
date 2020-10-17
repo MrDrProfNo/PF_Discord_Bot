@@ -4,7 +4,8 @@ UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
 
 
 
-# except for these numbers because it just lies about them for some reason
+# Except for these numbers because it just lies about them.
+# Turns out, the entire discord library is weird about sending the number emoji
 UNICODE_1 = "1\N{COMBINING ENCLOSING KEYCAP}"
 UNICODE_2 = "2\N{COMBINING ENCLOSING KEYCAP}"
 UNICODE_3 = "3\N{COMBINING ENCLOSING KEYCAP}"

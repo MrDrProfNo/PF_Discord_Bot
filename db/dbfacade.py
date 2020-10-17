@@ -15,7 +15,7 @@ class DatabaseFacade:
         Base.metadata.create_all(engine)
         self.__init_on_startup()
 
-    # All the database stuff will be incapsulated in this class
+    # All the database stuff will be encapsulated in this class
 
     # Sponsor of this code is Stackoverflow. Some magic with kwargs parsing
     def __create_if_absent(self, model, **kwargs):

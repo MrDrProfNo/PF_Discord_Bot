@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
-from discord import Message
+from discord import Message, Emoji, User
 import sys
 import unicodedata
 from message_sequences.message_sequence_example import MessageSequenceTest
-from message import UserMessageStates
-from unicode_constants import UNICODE_FORWARD_ARROW
+from message_sequences.new_game_sequence import NewGameSequence
+from message import UserMessageStates, MessageSequence
+from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1
 from db.dbfacade import DatabaseFacade
 from db.model import Game
 from game_modes import GameMode
@@ -52,6 +53,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     print("-" * 20 + "reaction received" + "-" * 20)
     print("REACTION:")
     print("emoji:", str(reaction.emoji))
+    print("uni-emoji:", unicodedata.name(reaction.emoji[0]))
     print("num reactions:", str(reaction.count))
     print("I reacted:", str(reaction.me))
     print("message ID:", str(reaction.message.id))
@@ -97,6 +99,11 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     print("RAW reaction received")
     user = bot.get_user(payload.user_id)
     print("From user:", user.name, "(" + str(payload.user_id) + ")")
+    print("reaction:", payload.emoji)
+    print("emoji name:", payload.emoji.name)
+    print("emoji id:", payload.emoji.id)
+    print(payload.emoji.name, "?=", UNICODE_1, ":", payload.emoji.name == UNICODE_1)
+
 
     # Looks like all possible send targets inherit from Messageable, and EITHER
     # GuildChannel or PrivateChannel (all 3 of which are in discord.abc)
@@ -168,33 +175,63 @@ async def scrims(context: commands.Context, *args):
 async def uni(context: commands.Context, emoji, *args):
     as_unicode = "\\N{" + unicodedata.name(emoji[0]) + "}"
     reply_string = emoji + ": " + as_unicode
+
     await context.send(content=reply_string)
 
 
 @bot.command()
-async def newgame(context: commands.Context, platform: str,
-                  mode_str: str):
-
-    message_did = str(context.message.id)
-    creator_did = str(context.message.author.id)
-
-    mode = None
-
-    for mode_pair in GameMode:
-        if mode_pair.value[3] == mode_str:
-            mode = mode_pair.value
-
-    if mode is None:
-        await context.send(f"Unrecognized mode: {mode_str}")
+async def game(context: commands.Context, game_id: str):
+    try:
+        game_id = int(game_id)
+    except ValueError:
+        await context.send("usage: !game <game_id>")
         return
 
-    await context.send("Received request for new game with platform={}, mode={}"
-                       .format(platform, mode_str))
+    retrieved_game = database.get_game(game_id)
+    await context.send("Game loaded:\n" + str(retrieved_game))
+    return
 
-    game: Game = database.add_game(creator_did=creator_did, platform=platform,
-                                   mode=mode, message_did=message_did)
 
-    await context.send("Game created:\n" + str(game))
+@bot.command()
+@commands.check(is_admin)
+async def demo(context: commands.Context, *args):
+    if len(args) > 0:
+        await context.send(content="demo accepts no arguments")
+        return
+    print("started demo")
+
+    user: User = context.message.author
+    message_sequence: MessageSequence = message_states.get_user_sequence(user)
+    if message_sequence:
+        await context.send(
+            "Overwriting previous MessageSequence, which was: "
+            + "Finished" if message_sequence.is_finished() else "Not Finished"
+        )
+    message_sequence = MessageSequenceTest(user)
+
+    await message_states.add_user_sequence(user, message_sequence)
+    await message_sequence.start_sequence()
+
+
+@bot.command()
+async def newgame(context: commands.Context, *args):
+    if len(args) > 0:
+        await context.send(content="newgame accepts no arguments")
+        return
+
+    print("started newgame")
+
+    user: User = context.message.author
+    message_sequence: MessageSequence = message_states.get_user_sequence(user)
+    if message_sequence:
+        await context.send(
+            "Overwriting previous MessageSequence, which was: "
+            + "Finished" if message_sequence.is_finished() else "Not Finished"
+        )
+    message_sequence = NewGameSequence(user)
+
+    await message_states.add_user_sequence(user, message_sequence)
+    await message_sequence.start_sequence()
 
 
 @bot.command()
