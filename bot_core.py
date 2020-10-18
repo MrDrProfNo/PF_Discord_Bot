@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import Message, Emoji, User
+from discord import Message, Emoji, User, Guild, TextChannel, CategoryChannel
 import sys
 import unicodedata
 from message_sequences.message_sequence_example import MessageSequenceTest
@@ -8,8 +8,6 @@ from message_sequences.new_game_sequence import NewGameSequence
 from message import UserMessageStates, MessageSequence
 from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1
 from db.dbfacade import DatabaseFacade
-from db.model import Game
-from game_modes import GameMode
 
 
 bot = commands.Bot(command_prefix='!')
@@ -104,6 +102,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     print("emoji id:", payload.emoji.id)
     print(payload.emoji.name, "?=", UNICODE_1, ":", payload.emoji.name == UNICODE_1)
 
+    guild: Guild = bot.get_guild(payload.guild_id)
 
     # Looks like all possible send targets inherit from Messageable, and EITHER
     # GuildChannel or PrivateChannel (all 3 of which are in discord.abc)
@@ -121,7 +120,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
             await message_sequence.run_next_handler(message)
         # no sequence with bot yet...
         else:
-            message_sequence = MessageSequenceTest(user)
+            message_sequence = NewGameSequence(user, guild)
 
             await message_states.add_user_sequence(user, message_sequence)
             await message_sequence.start_sequence()
@@ -180,19 +179,6 @@ async def uni(context: commands.Context, emoji, *args):
 
 
 @bot.command()
-async def game(context: commands.Context, game_id: str):
-    try:
-        game_id = int(game_id)
-    except ValueError:
-        await context.send("usage: !game <game_id>")
-        return
-
-    retrieved_game = database.get_game(game_id)
-    await context.send("Game loaded:\n" + str(retrieved_game))
-    return
-
-
-@bot.command()
 @commands.check(is_admin)
 async def demo(context: commands.Context, *args):
     if len(args) > 0:
@@ -245,6 +231,65 @@ async def game(context: commands.Context, game_id: str):
     retrieved_game = database.get_game(game_id)
     await context.send("Game loaded:\n" + str(retrieved_game))
     return
+
+
+@bot.command()
+async def category(context: commands.Context, category_name: str, *args):
+    guild: Guild = context.guild
+    await guild.create_category(name=category_name)
+
+
+@bot.command()
+async def channel(context: commands.Context, channel_name: str,
+                  category_name: str = None, *args):
+    guild: Guild = context.guild
+
+    if category_name is not None:
+        target_category: CategoryChannel = discord.utils.find(
+            lambda cat: cat.name == category_name,
+            guild.categories
+        )
+
+        await guild.create_text_channel(
+            name=channel_name,
+            category=target_category,
+            reason="test channel for PF_Discord_Bot"
+        )
+    else:
+        await guild.create_text_channel(
+            name=channel_name
+        )
+
+
+@bot.command()
+async def pchannel(context: commands.Context, channel_name: str,
+                    category_name: str = None, *args):
+
+    guild: Guild = context.guild
+
+    if category_name is not None:
+        target_category: CategoryChannel = discord.utils.find(
+            lambda cat: cat.name == category_name,
+            guild.categories
+        )
+
+        new_channel: TextChannel = await guild.create_text_channel(
+            name=channel_name,
+            category=target_category,
+            reason="test channel for PF_Discord_Bot"
+        )
+
+        await new_channel.set_permissions(context.author, read_messages=True)
+    else:
+
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            context.author: discord.PermissionOverwrite(read_messages=True)
+        }
+        await guild.create_text_channel(
+            name=channel_name,
+            overwrites=overwrites
+        )
 
 
 def main():

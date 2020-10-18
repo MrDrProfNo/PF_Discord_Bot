@@ -1,13 +1,14 @@
 from message import MessageSequence
 from typing import Callable, Union, List
-from discord import User, Embed, Message, Emoji
+from discord import User, Embed, Message, Emoji, Guild
 from unicode_constants import UNICODE_1, UNICODE_2, UNICODE_3
 import unicodedata
+import db.dbfacade as dbfacade
 
 
 class NewGameSequence(MessageSequence):
 
-    def __init__(self, user: User):
+    def __init__(self, user: User, guild: Guild):
         super().__init__(user)
         self.starter = self.initial_message
 
@@ -22,6 +23,8 @@ class NewGameSequence(MessageSequence):
 
         # Written description of the game
         self.game_description: str = None
+
+        self.guild_reference: Guild = guild
 
     async def initial_message(self) -> None:
         title = "New Game!"
@@ -194,3 +197,11 @@ class NewGameSequence(MessageSequence):
     async def user_confirm_description_message(self, description: str):
         # TODO: Implement a "you wrote this; please confirm" message?
         pass
+
+    async def create_game_channel(self):
+        game_category =
+
+        self.guild_reference.create_text_channel(
+            name=f"{self.user.name}'s channel",
+
+        )

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import sessionmaker, Query
 from sqlalchemy import create_engine
 import sqlalchemy
-from db.model import Base, Platform, State, Mode, Player, Game, Team
+from db.model import Base, Platform, State, Mode, Player, Game, Team, Property
 from game_modes import GameMode
 
 
@@ -133,3 +133,14 @@ class DatabaseFacade:
 
     def get_game(self, game_id):
         return self.session.query(Game).filter_by(id=game_id).first()
+
+    def get_property(self, property_name: str):
+        property_query = self.session.query(Property).filter_by(
+            name=property_name
+        )
+        property_row = property_query.first()
+        if property_row is not None:
+            return property_row.value
+        else:
+            print(f"get_property on non-existent property: {property_name}")
+            return None
