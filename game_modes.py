@@ -12,7 +12,7 @@ class GameMode(Enum):
     FIXED2V2V2V2 = (8, [2, 2, 2, 2], False, "2v2v2v2 Fixed Teams")
     RANDOM2V2 = (4, [2, 2], True, "2v2 Random Teams")
     RANDOM3V3 = (6, [3, 3], True, "3v3 Random Teams")
-    RANDOM4V4 = (8, [4, 4], True, "3v3 Random Teams")
+    RANDOM4V4 = (8, [4, 4], True, "4v4 Random Teams")
     RANDOM2V2V2 = (6, [2, 2, 2], True, "2v2v2 Random Teams")
     RANDOM2V2V2V2 = (8, [2, 2, 2, 2], True, "2v2v2v2 Random Teams")
     AI = (0, [], False, "vs AI")

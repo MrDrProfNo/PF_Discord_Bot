@@ -1,9 +1,11 @@
 from message import MessageSequence
-from typing import Callable, Union, List
-from discord import User, Embed, Message, Emoji, Guild
+from discord import User, Embed, Message, Emoji, Guild, TextChannel
+from discord.utils import find
 from unicode_constants import UNICODE_1, UNICODE_2, UNICODE_3
-import unicodedata
-import db.dbfacade as dbfacade
+from db.dbfacade import DatabaseFacade
+from db.property_constants import GAME_CATEGORY_PROPERTY_NAME
+from db.model import Game
+from game_modes import GameMode
 
 
 class NewGameSequence(MessageSequence):
@@ -21,10 +23,14 @@ class NewGameSequence(MessageSequence):
         # Number of players on a team
         self.team_size: int = None
 
+        self.mode_str: str = None
+
         # Written description of the game
         self.game_description: str = None
 
         self.guild_reference: Guild = guild
+
+        self.game: Game = None
 
     async def initial_message(self) -> None:
         title = "New Game!"
@@ -142,6 +148,13 @@ class NewGameSequence(MessageSequence):
         else:
             self.team_size = team_size
 
+        # TODO: correct "Random Teams" to user choice; not currently
+        #  asked for.
+        self.mode_str = ((str(self.team_size) + "v")
+                         * (self.team_count - 1)
+                         + str(self.team_size)
+                         + " Random Teams")
+
         await self.game_description_message()
         self.pass_handler(self.game_description_handler)
 
@@ -163,45 +176,102 @@ class NewGameSequence(MessageSequence):
     async def game_description_handler(self, message: Message):
         self.game_description = message.content
 
-        # TODO: replace this with actual game setup instead of echoing their
-        #  input.
-        await self.game_summary_temp()
-        self.pass_handler(None)
+        await self.user_confirm_message()
 
-    async def game_summary_temp(self):
-        """
-        Temporary summary of the game for debug purposes. Instead of doing this,
-        the program should store the game in the db and write the game to
-        whatever channel games are going in.
-        :return:
-        """
+        self.pass_handler(self.user_confirm_handler)
 
-        # should be formatting text like 2v2v2v2 in a 2-player/4-team game
-        teams_string = ((str(self.team_size) + "v")
-                        * (self.team_count - 1)
-                        + str(self.team_size))
+    async def user_confirm_message(self):
+        confirm_embed = Embed()
 
-        title = "Summary of Game (end of sequence)"
-        desc = "Teams: {0}\nDescription: {1}".format(
-            teams_string,
-            self.game_description
+        confirm_embed.title = "Confirm Game Setup"
+
+        confirm_embed.description = (
+            f"Mode: {self.mode_str}\n"
+            + f"Platform: {self.platform_choice}\n"
+            + f"Description: {self.game_description}\n"
+            + "React :one: to accept, :two: to restart"
         )
 
-        summary_embed = Embed()
-        summary_embed.title = title
-        summary_embed.description = desc
-
-        msg = await self.user.send(embed=summary_embed)
+        msg = await self.user.send(embed=confirm_embed)
         self.current_message = msg
 
-    async def user_confirm_description_message(self, description: str):
-        # TODO: Implement a "you wrote this; please confirm" message?
-        pass
+        await msg.add_reaction(UNICODE_1)
+        await msg.add_reaction(UNICODE_2)
+
+    @MessageSequence.requires_reaction
+    async def user_confirm_handler(self, message: Message):
+        reactions = MessageSequence.get_reactions_added(message)
+
+        if len(reactions) == 0:
+            return
+        elif len(reactions) > 1:
+            print("ERROR: Too many reactions added")
+            return
+        else:
+            emoji: Emoji = reactions[0].emoji
+
+            if emoji == UNICODE_1:
+                # TODO: Add game message in public channel, and pass instead of
+                #  empty string
+                target_mode = None
+                for mode in GameMode:
+                    if mode.value[3] == self.mode_str:
+                        target_mode = mode
+
+                if target_mode is not None:
+                    self.game = DatabaseFacade.add_game(
+                        str(self.user.id),
+                        self.platform_choice,
+                        target_mode.value,
+                        ""
+                    )
+                else:
+                    print(f"Unrecognized mode: {self.mode_str}")
+                    return None
+                await self.create_game_channel()
+
+            elif emoji == UNICODE_2:
+                self.pass_handler(None)
+                self.current_message = None
 
     async def create_game_channel(self):
-        game_category =
-
-        self.guild_reference.create_text_channel(
-            name=f"{self.user.name}'s channel",
-
+        game_category = DatabaseFacade.get_property(
+            GAME_CATEGORY_PROPERTY_NAME
         )
+
+        print(f"Searching for category: {game_category.value}")
+
+        game_id: str = str(self.game.id)
+        game_category = find(
+            lambda cat: cat.name == game_category.value,
+            self.guild_reference.categories
+        )
+
+        print("Game categories: ")
+        for category in self.guild_reference.categories:
+            print(category.name)
+
+        channel: TextChannel = await self.guild_reference.create_text_channel(
+            name=f"Game-{game_id}",
+            category=game_category
+        )
+
+        await channel.set_permissions(
+            self.user,
+            read_messages=True
+        )
+        await self.game_channel_message(channel)
+
+    async def game_channel_message(self, channel):
+        game_summary_embed = Embed()
+
+        game_summary_embed.title = f"Game {self.game.id} Summary"
+
+        game_summary_embed.description = (
+                f"Created by: {self.user.mention}"
+                + f"Mode: {self.mode_str}\n"
+                + f"Platform: {self.platform_choice}\n"
+                + f"Description: {self.game_description}\n"
+        )
+
+        await channel.send(embed=game_summary_embed)

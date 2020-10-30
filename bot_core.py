@@ -214,7 +214,7 @@ async def newgame(context: commands.Context, *args):
             "Overwriting previous MessageSequence, which was: "
             + "Finished" if message_sequence.is_finished() else "Not Finished"
         )
-    message_sequence = NewGameSequence(user)
+    message_sequence = NewGameSequence(user, context.guild)
 
     await message_states.add_user_sequence(user, message_sequence)
     await message_sequence.start_sequence()
@@ -228,7 +228,7 @@ async def game(context: commands.Context, game_id: str):
         await context.send("usage: !game <game_id>")
         return
 
-    retrieved_game = database.get_game(game_id)
+    retrieved_game = DatabaseFacade.get_game(game_id)
     await context.send("Game loaded:\n" + str(retrieved_game))
     return
 
@@ -289,6 +289,24 @@ async def pchannel(context: commands.Context, channel_name: str,
         await guild.create_text_channel(
             name=channel_name,
             overwrites=overwrites
+        )
+
+
+@bot.command()
+@commands.check(is_admin)
+async def prop(context: commands.Context, prop_name: str, prop_value: str=None):
+    if prop_value is None:
+        prop = DatabaseFacade.get_property(prop_name)
+        if prop is not None:
+            await context.send(
+                content=f"Value: {prop.value}"
+            )
+        else:
+            await context.send(f"Property undefined: {prop_name}")
+    else:
+        DatabaseFacade.set_property(prop_name, prop_value)
+        await context.send(
+            content=f"set property {prop_name} to {prop_value}"
         )
 
 
