@@ -152,11 +152,49 @@ class NewGameSequence(MessageSequence):
         #  asked for.
         self.mode_str = ((str(self.team_size) + "v")
                          * (self.team_count - 1)
-                         + str(self.team_size)
-                         + " Random Teams")
+                         + str(self.team_size))
 
-        await self.game_description_message()
-        self.pass_handler(self.game_description_handler)
+        await self.team_assignment_message()
+        self.pass_handler(self.team_assignment_handler)
+
+    async def team_assignment_message(self):
+        title = "Random or Fixed Teams"
+        description = ("Select team assignment:"
+                       "\n:one: Fixed"
+                       "\n:two: Random")
+
+        assign_embed = Embed()
+        assign_embed.title = title
+        assign_embed.description = description
+
+        msg = await self.user.send(embed=assign_embed)
+        self.current_message = msg
+        await msg.add_reaction(UNICODE_1)
+        await msg.add_reaction(UNICODE_2)
+
+    @MessageSequence.requires_reaction
+    async def team_assignment_handler(self, message: Message):
+        reactions: list = MessageSequence.get_reactions_added(message)
+        if len(reactions) > 1:
+            print("Too many reactions to message")
+            return
+        # case should never trigger due to requires_reaction
+        elif len(reactions) == 0:
+            print("No reaction provided to message")
+            return
+        else:
+            reaction = reactions[0]
+            emoji = reaction.emoji
+            if emoji == UNICODE_1:
+                self.mode_str += " Fixed Teams"
+            elif emoji == UNICODE_2:
+                self.mode_str += " Random Teams"
+            else:
+                print(f"invalid reaction: {str(emoji)}")
+                return
+
+            await self.game_description_message()
+            self.pass_handler(self.game_description_handler)
 
     async def game_description_message(self):
         title = "Game Info"
@@ -202,7 +240,9 @@ class NewGameSequence(MessageSequence):
     async def user_confirm_handler(self, message: Message):
         reactions = MessageSequence.get_reactions_added(message)
 
+        # case should never trigger due to requires_reaction
         if len(reactions) == 0:
+            print("No reaction provided to message")
             return
         elif len(reactions) > 1:
             print("ERROR: Too many reactions added")
@@ -268,7 +308,7 @@ class NewGameSequence(MessageSequence):
         game_summary_embed.title = f"Game {self.game.id} Summary"
 
         game_summary_embed.description = (
-                f"Created by: {self.user.mention}"
+                f"Created by: {self.user.mention}\n"
                 + f"Mode: {self.mode_str}\n"
                 + f"Platform: {self.platform_choice}\n"
                 + f"Description: {self.game_description}\n"
