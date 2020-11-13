@@ -271,8 +271,13 @@ class NewGameSequence(MessageSequence):
                 await self.create_game_channel()
 
             elif emoji == UNICODE_2:
-                self.pass_handler(None)
-                self.current_message = None
+                self.starter = self.initial_message
+                self.platform_choice: str = None
+                self.team_count: int = None
+                self.team_size: int = None
+                self.mode_str: str = None
+                self.game_description: str = None
+                self.game: Game = None
 
     async def create_game_channel(self):
         game_category = DatabaseFacade.get_property(
