@@ -1,9 +1,10 @@
 from message import MessageSequence
 from discord import User, Embed, Message, Emoji, Guild, TextChannel
 from discord.utils import find
-from unicode_constants import UNICODE_1, UNICODE_2, UNICODE_3
+from unicode_constants import UNICODE_1, UNICODE_2, UNICODE_3, \
+    UNICODE_FORWARD_ARROW
 from db.dbfacade import DatabaseFacade
-from db.property_constants import GAME_CATEGORY_PROPERTY_NAME
+from db.property_constants import GAME_CATEGORY_PROPERTY_NAME, JOIN_GAME_CHANNEL
 from db.model import Game
 from game_modes import GameMode
 
@@ -201,7 +202,7 @@ class NewGameSequence(MessageSequence):
         desc = "Please enter any info about your game that you'd like other" \
                " players to see. Things like custom rules, world settings, etc." \
                "\nOnly text in the next message you send will be accepted. Use" \
-               "Shift+Enter if multiple lines are required."
+               " Shift+Enter if multiple lines are required."
 
         description_embed = Embed()
         description_embed.title = title
@@ -267,9 +268,9 @@ class NewGameSequence(MessageSequence):
                         ""
                     )
 
-                    msg: Message = await self.create_game_channel()
+                    await self.create_game_channel()
 
-                    self.game.game_message_did = msg.id
+                    await self.game_public_message()
 
                 else:
                     print(f"Unrecognized mode: {self.mode_str}")
@@ -315,7 +316,7 @@ class NewGameSequence(MessageSequence):
             self.user,
             read_messages=True
         )
-        return await self.game_channel_message(channel)
+        await self.game_channel_message(channel)
 
     async def game_channel_message(self, channel):
         game_summary_embed = Embed()
@@ -331,4 +332,31 @@ class NewGameSequence(MessageSequence):
 
         game_summary_msg = await channel.send(embed=game_summary_embed)
 
-        return game_summary_msg
+        self.game.game_message_did = str(game_summary_msg.id)
+
+    async def game_public_message(self):
+
+        game_summary_embed = Embed()
+
+        game_summary_embed.title = f"Game {self.game.id} Summary"
+
+        game_summary_embed.description = (
+                "React to join! (not really, that doesn't work yet)\n"
+                + f"Created by: {self.user.mention}\n"
+                + f"Mode: {self.mode_str}\n"
+                + f"Platform: {self.platform_choice}\n"
+                + f"Description: {self.game_description}\n"
+        )
+
+        channel_prop = DatabaseFacade.get_property(JOIN_GAME_CHANNEL)
+        channel_name = channel_prop.value
+
+        channel: TextChannel = find(
+            lambda channel: channel.name == channel_name,
+            self.guild_reference.channels
+        )
+
+        game_message = await channel.send(embed=game_summary_embed)
+
+        self.game.message_did = str(game_message.id)
+        await game_message.add_reaction(UNICODE_FORWARD_ARROW)
