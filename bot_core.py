@@ -190,7 +190,7 @@ async def demo(context: commands.Context, *args):
     if message_sequence:
         await context.send(
             "Overwriting previous MessageSequence, which was: "
-            + "Finished" if message_sequence.is_finished() else "Not Finished"
+            + "Finished" if await message_sequence.is_finished() else "Not Finished"
         )
     message_sequence = MessageSequenceTest(user)
 
