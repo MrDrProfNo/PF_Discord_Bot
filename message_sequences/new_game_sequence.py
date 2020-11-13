@@ -259,18 +259,25 @@ class NewGameSequence(MessageSequence):
                         target_mode = mode
 
                 if target_mode is not None:
+
                     self.game = DatabaseFacade.add_game(
                         str(self.user.id),
                         self.platform_choice,
                         target_mode.value,
                         ""
                     )
+
+                    msg: Message = await self.create_game_channel()
+
+                    self.game.message_did = msg.id
+
                 else:
                     print(f"Unrecognized mode: {self.mode_str}")
                     return None
-                await self.create_game_channel()
 
             elif emoji == UNICODE_2:
+
+                # wipe all data collected
                 self.starter = self.initial_message
                 self.platform_choice: str = None
                 self.team_count: int = None
@@ -278,6 +285,9 @@ class NewGameSequence(MessageSequence):
                 self.mode_str: str = None
                 self.game_description: str = None
                 self.game: Game = None
+
+                # reset to first message
+                await self.initial_message()
 
     async def create_game_channel(self):
         game_category = DatabaseFacade.get_property(
@@ -305,7 +315,7 @@ class NewGameSequence(MessageSequence):
             self.user,
             read_messages=True
         )
-        await self.game_channel_message(channel)
+        return await self.game_channel_message(channel)
 
     async def game_channel_message(self, channel):
         game_summary_embed = Embed()
@@ -319,4 +329,6 @@ class NewGameSequence(MessageSequence):
                 + f"Description: {self.game_description}\n"
         )
 
-        await channel.send(embed=game_summary_embed)
+        game_summary_msg = await channel.send(embed=game_summary_embed)
+
+        return game_summary_msg

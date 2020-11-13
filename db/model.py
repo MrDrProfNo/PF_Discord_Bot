@@ -52,7 +52,8 @@ class Game(Base):
                 \nmode: {self.mode.name} \
                 \nplatform: {self.platform.name} \
                 \ncreated_at: {self.created_at} \
-                \nteams:\n{team_str}"
+                \nteams:\n{team_str}\
+                \nmessage_did: {self.message_did}"
 
 
 # Defines the game state (WAITING, IN PROGRESS, FINISHED, CANCELLED)
