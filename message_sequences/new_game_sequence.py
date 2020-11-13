@@ -269,7 +269,7 @@ class NewGameSequence(MessageSequence):
 
                     msg: Message = await self.create_game_channel()
 
-                    self.game.message_did = msg.id
+                    self.game.game_message_did = msg.id
 
                 else:
                     print(f"Unrecognized mode: {self.mode_str}")

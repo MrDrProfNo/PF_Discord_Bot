@@ -55,7 +55,6 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     print("num reactions:", str(reaction.count))
     print("I reacted:", str(reaction.me))
     print("message ID:", str(reaction.message.id))
-
     print("react by USER:")
     print("username:", str(user.display_name))
     print("user is bot:", str(user.bot))
