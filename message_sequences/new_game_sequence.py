@@ -312,6 +312,11 @@ class NewGameSequence(MessageSequence):
             category=game_category
         )
 
+        DatabaseFacade.update_game(
+            self.game.id,
+            channel_did=str(channel.id)
+        )
+
         await channel.set_permissions(
             self.user,
             read_messages=True
@@ -332,7 +337,10 @@ class NewGameSequence(MessageSequence):
 
         game_summary_msg = await channel.send(embed=game_summary_embed)
 
-        self.game.game_message_did = str(game_summary_msg.id)
+        DatabaseFacade.update_game(
+            self.game.id,
+            game_message_did=str(game_summary_msg.id)
+        )
 
     async def game_public_message(self):
 
@@ -358,5 +366,8 @@ class NewGameSequence(MessageSequence):
 
         game_message = await channel.send(embed=game_summary_embed)
 
-        self.game.message_did = str(game_message.id)
+        DatabaseFacade.update_game(
+            self.game.id,
+            message_did=str(game_message.id)
+        )
         await game_message.add_reaction(UNICODE_FORWARD_ARROW)

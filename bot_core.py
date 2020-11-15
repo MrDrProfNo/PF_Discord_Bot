@@ -1,14 +1,16 @@
 import discord
 from discord.ext import commands
-from discord import Message, Emoji, User, Guild, TextChannel, CategoryChannel
+from discord import Message, Emoji, User, Guild, TextChannel, CategoryChannel, \
+    DMChannel
 import sys
 import unicodedata
 from message_sequences.message_sequence_example import MessageSequenceTest
 from message_sequences.new_game_sequence import NewGameSequence
 from message import UserMessageStates, MessageSequence
-from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1
+from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1, START_GAME_EMOJI
+from db.property_constants import CREATE_GAME_CHANNEL, JOIN_GAME_CHANNEL
 from db.dbfacade import DatabaseFacade
-
+from db.model import Game
 
 bot = commands.Bot(command_prefix='!')
 
@@ -84,7 +86,6 @@ async def on_message(message: discord.Message):
         if message_sequence is not None:
             await message_sequence.run_next_handler(message)
 
-
     # overriding on_message stops the bot from processing @bot.command()
     # functions. So we have to call this instead if we want messages to be
     # correctly as interpreted as commands.
@@ -93,36 +94,96 @@ async def on_message(message: discord.Message):
 
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
-    print("RAW reaction received")
     user = bot.get_user(payload.user_id)
-    print("From user:", user.name, "(" + str(payload.user_id) + ")")
-    print("reaction:", payload.emoji)
-    print("emoji name:", payload.emoji.name)
-    print("emoji id:", payload.emoji.id)
-    print(payload.emoji.name, "?=", UNICODE_1, ":", payload.emoji.name == UNICODE_1)
+
+
+    # DEBUG output, enable if needed.
+    # print("RAW reaction received")
+    # print("From user:", user.name, "(" + str(payload.user_id) + ")")
+    # print("reaction:", payload.emoji)
+    # print("emoji name:", payload.emoji.name)
+    # print("emoji id:", payload.emoji.id)
+    # print(payload.emoji.name, "?=", UNICODE_1, ":", payload.emoji.name == UNICODE_1)
+    # print("payload channel: {}".format(payload.channel_id))
 
     guild: Guild = bot.get_guild(payload.guild_id)
 
     # Looks like all possible send targets inherit from Messageable, and EITHER
     # GuildChannel or PrivateChannel (all 3 of which are in discord.abc)
-    print("payload channel: {}".format(payload.channel_id))
-    channel: discord.abc.Messageable = bot.get_channel(payload.channel_id)
+    channel: discord.TextChannel = bot.get_channel(payload.channel_id)
+    print(f"channel: {channel}")
     message: Message = await channel.fetch_message(payload.message_id)
 
     if not user.bot:
-        message_sequence: MessageSequenceTest \
-            = message_states.get_user_sequence(user)
 
-        # if the user has a sequence with the bot already...
-        if message_sequence is not None:
-            # pass the message along to the sequence's handler
-            await message_sequence.run_next_handler(message)
-        # no sequence with bot yet...
+        create_game_prop = DatabaseFacade.get_property(
+            property_name=CREATE_GAME_CHANNEL
+        )
+
+        # if the above evaluated true, then channel should have a name
+        # attribute at this point.
+        create_game_channel_name = create_game_prop.value
+
+        join_game_prop = DatabaseFacade.get_property(
+            property_name=JOIN_GAME_CHANNEL
+        )
+
+        join_game_channel_name = join_game_prop.value
+
+        if type(channel) == DMChannel:
+            print("CHECKED as DMChannel")
+            message_sequence: MessageSequenceTest \
+                = message_states.get_user_sequence(user)
+
+            # if the user has a sequence with the bot already...
+            if message_sequence is not None:
+                # pass the message along to the sequence's handler
+                await message_sequence.run_next_handler(message)
+                return
+            # otherwise... just ignore them I think?
+            else:
+                return
+        # this is the message the bot put in the create a game channel
+        elif channel.name == create_game_channel_name:
+            print("CHECKED as a create game message")
+            reactions = message.reactions
+            for reaction in reactions:
+                try:
+                    await message.remove_reaction(reaction.emoji, user)
+                except Exception as e:
+                    print(f"ERROR: While removing reaction, got exception of "
+                          f"type {type(e)}")
+
+            new_game_sequence = NewGameSequence(user, guild)
+            await message_states.add_user_sequence(user, new_game_sequence)
+            await new_game_sequence.start_sequence()
+        elif channel.name == join_game_channel_name:
+            print("CHECKED as a join game message")
+            # reaction was added on a message in the games channel
+            game: Game = DatabaseFacade.get_game_by_message_did(
+                str(message.id)
+            )
+
+            user_as_player = DatabaseFacade.get_player_by_did(str(user.id))
+            if game is not None:
+                DatabaseFacade.add_player_to_game(game.id, user_as_player)
+                game_channel: TextChannel = bot.get_channel(int(game.channel_id))
+                await game_channel.set_permissions(
+                    user,
+                    read_messages=True
+                )
+            else:
+                print(f"Game not found with message_did: {message.id}")
+
+        # this should become a check against all of the game's private channel
+        # messages, which I'll probably build team swapping into
+        elif channel.category_id is not None:
+            print("CHECKED as a channel in a category")
+            pass
+
         else:
-            message_sequence = NewGameSequence(user, guild)
+            print("CHECKED as other message")
 
-            await message_states.add_user_sequence(user, message_sequence)
-            await message_sequence.start_sequence()
 
 
 @bot.command()
@@ -227,7 +288,7 @@ async def game(context: commands.Context, game_id: str):
         await context.send("usage: !game <game_id>")
         return
 
-    retrieved_game = DatabaseFacade.get_game(game_id)
+    retrieved_game = DatabaseFacade.get_game_by_id(game_id)
     await context.send("Game loaded:\n" + str(retrieved_game))
     return
 
@@ -307,6 +368,11 @@ async def prop(context: commands.Context, prop_name: str, prop_value: str=None):
         await context.send(
             content=f"set property {prop_name} to {prop_value}"
         )
+
+
+@bot.command()
+async def test(context: commands.Context):
+    DatabaseFacade.add_player_to_game()
 
 
 def main():

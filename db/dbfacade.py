@@ -139,8 +139,36 @@ class DatabaseFacade:
         return new_game
 
     @staticmethod
-    def get_game(game_id):
+    def get_game_by_id(game_id: int) -> Game:
         return session.query(Game).filter_by(id=game_id).first()
+
+    @staticmethod
+    def get_game_by_message_did(message_did: str) -> Game:
+        return session.query(Game).filter_by(message_did=message_did).first()
+
+    @staticmethod
+    def get_game_by_game_message_did(game_message_did: str) -> Game:
+        return session.query(Game).filter_by(
+            game_message_did=game_message_did
+        ).first()
+
+    @staticmethod
+    def update_game(game_id: int,
+                    message_did: str = None,
+                    game_message_did: str = None,
+                    channel_did: str = None) -> None:
+        game: Game = DatabaseFacade.get_game_by_id(game_id)
+
+        if message_did is not None:
+            game.message_did = message_did
+
+        if game_message_did is not None:
+            game.game_message_did = game_message_did
+
+        if channel_did is not None:
+            game.channel_id = channel_did
+
+        session.commit()
 
     @staticmethod
     def get_property(property_name: str) -> Property:
@@ -170,3 +198,28 @@ class DatabaseFacade:
 
             session.commit()
             return
+
+    @staticmethod
+    def add_player_to_team(game_id: int, team_number: int, player: Player):
+        game: Game = DatabaseFacade.get_game_by_id(game_id)
+        DatabaseFacade._add_player_to_team(game, team_number, player)
+
+        session.commit()
+
+    @staticmethod
+    def _add_player_to_team(game: Game, team_number: int, player: Player):
+        print(f"Adding player {player.id} to game: {game.id}")
+        team: Team = game.teams[team_number]
+        if not player in team.players:
+            team.players.append(player)
+
+        session.commit()
+
+    @staticmethod
+    def add_player_to_game(game_id: int, player: Player):
+        print(f"Adding player: {player.id} to game: {game_id}")
+        game: Game = DatabaseFacade.get_game_by_id(game_id)
+        # put them on team 0
+        DatabaseFacade._add_player_to_team(game, 0, player)
+
+        session.commit()

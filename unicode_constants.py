@@ -1,7 +1,7 @@
 # to get values like this, run !uni <emoji> while the bot is active
 UNICODE_FORWARD_ARROW = "\N{BLACK RIGHT-POINTING TRIANGLE}"
 
-
+START_GAME_EMOJI = UNICODE_FORWARD_ARROW
 
 
 # Except for these numbers because it just lies about them.

@@ -24,7 +24,7 @@ class Player(Base):
 class Game(Base):
     __tablename__ = 'games'
     id = Column(Integer, primary_key=True)
-    channel_id = Column(Integer)
+    channel_id = Column(String)
     state_id = Column(Integer, ForeignKey('states.id'))
     state = relationship('State', back_populates='games')
     creator_id = Column(Integer, ForeignKey('players.id'))
