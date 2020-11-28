@@ -371,6 +371,46 @@ async def prop(context: commands.Context, prop_name: str, prop_value: str=None):
         )
 
 
+@bot.command()
+async def leave(context: commands.Context, *args):
+    channel_did = str(context.channel.id)
+    game: Game = DatabaseFacade.get_game_by_channel_did(channel_did)
+    if game is not None:
+        player_did = str(context.author.id)
+        leaver = DatabaseFacade.get_player_by_did(player_did=player_did)
+        DatabaseFacade.remove_player_from_game(game.id, leaver)
+
+        game_channel_id: int = int(game.channel_id)
+
+        game_channel: TextChannel = bot.get_channel(game_channel_id)
+
+        await game_channel.set_permissions(
+            context.author,
+            read_messages=False
+        )
+
+
+@bot.command()
+async def kick(context: commands.Context, mentioned: User, *args):
+    if len(args) > 0:
+        await context.send("usage: !kick <@user>")
+        return
+    else:
+        channel_did = str(context.channel.id)
+        game: Game = DatabaseFacade.get_game_by_channel_did(channel_did)
+        if game is not None:
+            player_did = str(mentioned.id)
+            kicked = DatabaseFacade.get_player_by_did(player_did)
+            DatabaseFacade.remove_player_from_game(game.id, kicked)
+
+            game_channel: TextChannel = bot.get_channel(context.channel.id)
+
+            await game_channel.set_permissions(
+                mentioned,
+                read_messages=False
+            )
+
+
 def main():
     if len(sys.argv) < 2:
         print(

@@ -153,6 +153,12 @@ class DatabaseFacade:
         ).first()
 
     @staticmethod
+    def get_game_by_channel_did(channel_did: str) -> Game:
+        return session.query(Game).filter_by(
+            channel_id=channel_did
+        ).first()
+
+    @staticmethod
     def update_game(game_id: int,
                     message_did: str = None,
                     game_message_did: str = None,
@@ -208,7 +214,8 @@ class DatabaseFacade:
 
     @staticmethod
     def _add_player_to_team(game: Game, team_number: int, player: Player):
-        print(f"Adding player {player.id} to game: {game.id}")
+        print(f"Adding player {player.id} to game: {game.id}, "
+              f"team: {team_number}")
         team: Team = game.teams[team_number]
         if not player in team.players:
             team.players.append(player)
@@ -223,3 +230,14 @@ class DatabaseFacade:
         DatabaseFacade._add_player_to_team(game, 0, player)
 
         session.commit()
+
+    @staticmethod
+    def remove_player_from_game(game_id: int, player: Player):
+        game: Game = DatabaseFacade.get_game_by_id(game_id)
+        for team in game.teams:
+            if player in team.players:
+                print(f"Found {player} in team {team.id}")
+                team.players.remove(player)
+                session.commit()
+            else:
+                print(f"Didn't find {player} in team {team.id}")
