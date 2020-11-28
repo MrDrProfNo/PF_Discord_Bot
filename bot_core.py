@@ -373,6 +373,9 @@ async def prop(context: commands.Context, prop_name: str, prop_value: str=None):
 
 @bot.command()
 async def leave(context: commands.Context, *args):
+    if len(args) > 0:
+        await context.send("Usage: !leave")
+        return
     channel_did = str(context.channel.id)
     game: Game = DatabaseFacade.get_game_by_channel_did(channel_did)
     if game is not None:
@@ -389,6 +392,16 @@ async def leave(context: commands.Context, *args):
             read_messages=False
         )
 
+        print("leave functioned properly so far....")
+
+        await context.send(
+            content=f"User {context.author.name} has left the game"
+        )
+
+        print("sent message on channel", context.channel.id)
+
+        return
+
 
 @bot.command()
 async def kick(context: commands.Context, mentioned: User, *args):
@@ -399,8 +412,15 @@ async def kick(context: commands.Context, mentioned: User, *args):
         channel_did = str(context.channel.id)
         game: Game = DatabaseFacade.get_game_by_channel_did(channel_did)
         if game is not None:
-            player_did = str(mentioned.id)
-            kicked = DatabaseFacade.get_player_by_did(player_did)
+            caller_did = str(context.author.id)
+            caller = DatabaseFacade.get_player_by_did(caller_did)
+
+            if caller.id != game.creator_id:
+                await context.send("\"!kick\" can only be used by the creator.")
+                return
+
+            mentioned_did = str(mentioned.id)
+            kicked = DatabaseFacade.get_player_by_did(mentioned_did)
             DatabaseFacade.remove_player_from_game(game.id, kicked)
 
             game_channel: TextChannel = bot.get_channel(context.channel.id)
@@ -408,6 +428,10 @@ async def kick(context: commands.Context, mentioned: User, *args):
             await game_channel.set_permissions(
                 mentioned,
                 read_messages=False
+            )
+
+            await context.send(
+                content=f"User {mentioned.name} has been kicked."
             )
 
 

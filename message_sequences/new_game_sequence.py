@@ -79,7 +79,7 @@ class NewGameSequence(MessageSequence):
 
     async def team_count_message(self):
         title = "How many teams will there be?"
-        desc = "(type the number of teams. Use '0' for FFA. Max 12 teams.)"
+        desc = "(type the number of teams. Use '0' for FFA. Max 4 teams.)"
 
         team_count_embed = Embed()
         team_count_embed.title = title
@@ -98,11 +98,11 @@ class NewGameSequence(MessageSequence):
             )
             return
 
-        if 2 <= team_count <= 12 or team_count == 0:
+        if 2 <= team_count <= 4 or team_count == 0:
             self.team_count = team_count
         else:
             await self.user.send(
-                content="Number of teams must be between 2 and 12"
+                content="Number of teams must be between 2 and 4"
             )
             return
 
@@ -111,6 +111,7 @@ class NewGameSequence(MessageSequence):
             self.pass_handler(self.team_size_handler)
         # FFA games don't have to specify team sizes
         else:
+            self.mode_str = "FFA"
             await self.game_description_message()
             self.pass_handler(self.game_description_handler)
 
@@ -349,7 +350,7 @@ class NewGameSequence(MessageSequence):
         game_summary_embed.title = f"Game {self.game.id} Summary"
 
         game_summary_embed.description = (
-                "React to join! (not really, that doesn't work yet)\n"
+                "React to join!\n"
                 + f"Created by: {self.user.mention}\n"
                 + f"Mode: {self.mode_str}\n"
                 + f"Platform: {self.platform_choice}\n"

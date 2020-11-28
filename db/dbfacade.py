@@ -154,6 +154,7 @@ class DatabaseFacade:
 
     @staticmethod
     def get_game_by_channel_did(channel_did: str) -> Game:
+        print(f"Get on channel with did {channel_did}")
         return session.query(Game).filter_by(
             channel_id=channel_did
         ).first()
