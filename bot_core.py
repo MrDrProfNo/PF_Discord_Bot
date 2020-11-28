@@ -260,6 +260,7 @@ async def demo(context: commands.Context, *args):
 
 
 @bot.command()
+@commands.check(is_admin)
 async def newgame(context: commands.Context, *args):
     if len(args) > 0:
         await context.send(content="newgame accepts no arguments")
