@@ -370,11 +370,6 @@ async def prop(context: commands.Context, prop_name: str, prop_value: str=None):
         )
 
 
-@bot.command()
-async def test(context: commands.Context):
-    DatabaseFacade.add_player_to_game()
-
-
 def main():
     if len(sys.argv) < 2:
         print(
