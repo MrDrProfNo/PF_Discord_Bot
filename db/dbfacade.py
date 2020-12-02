@@ -233,12 +233,19 @@ class DatabaseFacade:
         session.commit()
 
     @staticmethod
-    def remove_player_from_game(game_id: int, player: Player):
+    def remove_player_from_game(game_id: int, player: Player) -> bool:
+
         game: Game = DatabaseFacade.get_game_by_id(game_id)
         for team in game.teams:
             if player in team.players:
-                print(f"Found {player} in team {team.id}")
                 team.players.remove(player)
                 session.commit()
+                return True
             else:
-                print(f"Didn't find {player} in team {team.id}")
+                return False
+
+    @staticmethod
+    def delete_game_by_id(game_id: int):
+        session.query(Game).filter_by(id=game_id).delete()
+        session.commit()
+

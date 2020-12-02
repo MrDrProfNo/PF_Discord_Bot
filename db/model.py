@@ -4,10 +4,12 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-player_team_association = Table('player_team_association', Base.metadata,
-                              Column('player_id', Integer, ForeignKey('players.id')),
-                              Column('team_id', Integer, ForeignKey('teams.id'))
-                              )
+player_team_association = Table(
+    'player_team_association',
+    Base.metadata,
+    Column('player_id', Integer, ForeignKey('players.id', ondelete="cascade")),
+    Column('team_id', Integer, ForeignKey('teams.id', ondelete="cascade"))
+)
 
 
 # Defines the unique player based on unique discord id
@@ -26,7 +28,7 @@ class Game(Base):
     id = Column(Integer, primary_key=True)
     channel_id = Column(String)
     state_id = Column(Integer, ForeignKey('states.id'))
-    state = relationship('State', back_populates='games')
+    state = relationship('State', back_populates='games', cascade="all")
     creator_id = Column(Integer, ForeignKey('players.id'))
     creator = relationship('Player', back_populates='games')
     platform_id = Column(Integer, ForeignKey('platforms.id'))
@@ -86,7 +88,7 @@ class Team(Base):
     id = Column(Integer, primary_key=True)
     number = Column(Integer)
     size = Column(Integer)
-    game_id = Column(Integer, ForeignKey('games.id'))
+    game_id = Column(Integer, ForeignKey('games.id', ondelete="cascade"))
     game = relationship('Game', back_populates='teams')
     players = relationship("Player", secondary=player_team_association, back_populates="teams")
 

@@ -373,14 +373,20 @@ async def prop(context: commands.Context, prop_name: str, prop_value: str=None):
 
 @bot.command()
 async def leave(context: commands.Context, *args):
-    if len(args) > 0:
-        await context.send("Usage: !leave")
-        return
     channel_did = str(context.channel.id)
     game: Game = DatabaseFacade.get_game_by_channel_did(channel_did)
     if game is not None:
+        if len(args) > 0:
+            await context.send("Usage: !leave")
+            return
         player_did = str(context.author.id)
         leaver = DatabaseFacade.get_player_by_did(player_did=player_did)
+
+        if leaver.id == game.creator_id:
+            await context.send("The creator cannot leave the game; use !delete"
+                               " to remove the game instead.")
+            return
+
         DatabaseFacade.remove_player_from_game(game.id, leaver)
 
         game_channel_id: int = int(game.channel_id)
@@ -405,23 +411,38 @@ async def leave(context: commands.Context, *args):
 
 @bot.command()
 async def kick(context: commands.Context, mentioned: User, *args):
-    if len(args) > 0:
-        await context.send("usage: !kick <@user>")
-        return
-    else:
-        channel_did = str(context.channel.id)
-        game: Game = DatabaseFacade.get_game_by_channel_did(channel_did)
-        if game is not None:
+    channel_did = str(context.channel.id)
+    game: Game = DatabaseFacade.get_game_by_channel_did(channel_did)
+    if game is not None:
+        if len(args) > 0:
+            await context.send("usage: !kick <@user>\nCan only be used by the"
+                               " creator of the game")
+            return
+        else:
+
             caller_did = str(context.author.id)
             caller = DatabaseFacade.get_player_by_did(caller_did)
 
             if caller.id != game.creator_id:
-                await context.send("\"!kick\" can only be used by the creator.")
+                await context.send("!kick can only be used by the creator.")
                 return
 
             mentioned_did = str(mentioned.id)
             kicked = DatabaseFacade.get_player_by_did(mentioned_did)
-            DatabaseFacade.remove_player_from_game(game.id, kicked)
+
+            if kicked.id == game.creator.id:
+                await context.send(
+                    "!kick cannot be used to remove the creator"
+                )
+                return
+
+            success = DatabaseFacade.remove_player_from_game(game.id, kicked)
+
+            if not success:
+                await context.send(
+                    f"Cannot kick user {mentioned.name}; user is not in game"
+                )
+                return
 
             game_channel: TextChannel = bot.get_channel(context.channel.id)
 
@@ -433,6 +454,50 @@ async def kick(context: commands.Context, mentioned: User, *args):
             await context.send(
                 content=f"User {mentioned.name} has been kicked."
             )
+
+
+@bot.command()
+async def delete(context: commands.Context, *args):
+    channel_did = str(context.channel.id)
+    game: Game = DatabaseFacade.get_game_by_channel_did(channel_did)
+    if game is not None:
+        if len(args) > 0:
+            await context.send("usage: !delete")
+            return
+        else:
+
+            caller_did = str(context.author.id)
+            caller = DatabaseFacade.get_player_by_did(caller_did)
+
+            join_game_message_id = int(game.message_did)
+            print(f"looking for join message with id {join_game_message_id}")
+
+            join_game_channel_prop = DatabaseFacade.get_property(
+                JOIN_GAME_CHANNEL
+            )
+
+            join_game_channel = discord.utils.find(
+                lambda channel: channel.name == join_game_channel_prop.value,
+                context.guild.text_channels
+            )
+            print(f"got join channel with name {join_game_channel.name}")
+
+            join_game_message = await join_game_channel.fetch_message(
+                join_game_message_id
+            )
+
+            if caller.id != game.creator_id:
+                await context.send("Only the creator can delete a game")
+                return
+
+            DatabaseFacade.delete_game_by_id(game.id)
+
+            print(f"deleting channel {context.channel.name}")
+            await context.channel.delete()
+
+            print(f"join_game_message has id")
+            await join_game_message.delete()
+            return
 
 
 def main():
