@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import Message, Emoji, User, Guild, TextChannel, CategoryChannel, \
     DMChannel
 import sys
+import os
 import unicodedata
 from message_sequences.message_sequence_example import MessageSequenceTest
 from message_sequences.new_game_sequence import NewGameSequence
@@ -17,12 +18,45 @@ bot = commands.Bot(command_prefix='!')
 # message sequence related code
 message_states = UserMessageStates()
 
-# db related code
-if len(sys.argv) == 3:
-    database = DatabaseFacade(connection_string=sys.argv[2])
-else:
-    print("Incorrect number of args; requires connection string in position 2")
-    exit()
+
+CONNECTION_STRING = os.getenv("DATABASE_URL")
+BOT_TOKEN = os.getenv("TOKEN")
+
+# some command line args provided
+if len(sys.argv) > 1:
+
+    # setting up the database connection string
+    if len(sys.argv) == 3:
+        BOT_TOKEN = sys.argv[1]
+        database = DatabaseFacade(connection_string=sys.argv[2])
+    else:
+        print(
+            "Incorrect number of args; requires connection string in position 2"
+        )
+        exit()
+# no command line args provided
+elif len(sys.argv) == 1:
+
+    # establish that a connection string is available
+    if CONNECTION_STRING is None:
+        # getenv failed
+        print(
+            "No command line args, and connection string environment variable"
+            " missing"
+        )
+        exit()
+    else:
+        # getenv found something; will crash later if invalid token.
+        database = DatabaseFacade(connection_string=CONNECTION_STRING)
+
+
+    # establish that a bot token is available.
+    if BOT_TOKEN is None:
+        # getenv failed
+        print(
+            "No command line args, and bot token environment variable missing"
+        )
+        exit()
 
 
 async def is_admin(context: commands.Context):
@@ -501,18 +535,10 @@ async def delete(context: commands.Context, *args):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(
-            "Bot token must be passed as command line argument.\nIf you don't "
-            "have the bot token yet, ask MrNo"
-        )
-        exit()
 
-    bot_token = sys.argv[1]
+    print("Using bot_token: " + BOT_TOKEN)
 
-    print("Using bot_token: " + bot_token)
-
-    bot.run(bot_token)
+    bot.run(BOT_TOKEN)
 
 
 if __name__ == '__main__':
