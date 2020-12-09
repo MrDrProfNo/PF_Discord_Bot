@@ -4,12 +4,15 @@ from discord import Message, Emoji, User, Guild, TextChannel, CategoryChannel, \
     DMChannel
 import sys
 import os
-import unicodedata
+import unicodedata as ud
 from message_sequences.message_sequence_example import MessageSequenceTest
 from message_sequences.new_game_sequence import NewGameSequence
 from message import UserMessageStates, MessageSequence
-from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1, START_GAME_EMOJI
-from db.property_constants import CREATE_GAME_CHANNEL, JOIN_GAME_CHANNEL
+from unicode_constants import UNICODE_FORWARD_ARROW, UNICODE_1, \
+    START_GAME_EMOJI, UNICODE_2, UNICODE_3, UNICODE_4, UNICODE_5, UNICODE_6, \
+    UNICODE_0
+from db.property_constants import CREATE_GAME_CHANNEL, JOIN_GAME_CHANNEL, \
+    GAME_CATEGORY_PROPERTY_NAME
 from db.dbfacade import DatabaseFacade
 from db.model import Game
 
@@ -87,7 +90,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     print("-" * 20 + "reaction received" + "-" * 20)
     print("REACTION:")
     print("emoji:", str(reaction.emoji))
-    print("uni-emoji:", unicodedata.name(reaction.emoji[0]))
+    print("uni-emoji:", ud.name(reaction.emoji[0]))
     print("num reactions:", str(reaction.count))
     print("I reacted:", str(reaction.me))
     print("message ID:", str(reaction.message.id))
@@ -130,7 +133,6 @@ async def on_message(message: discord.Message):
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     user = bot.get_user(payload.user_id)
 
-
     # DEBUG output, enable if needed.
     # print("RAW reaction received")
     # print("From user:", user.name, "(" + str(payload.user_id) + ")")
@@ -165,7 +167,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
         join_game_channel_name = join_game_prop.value
 
         if type(channel) == DMChannel:
-            print("CHECKED as DMChannel")
+            print("checked as DMChannel")
             message_sequence: MessageSequenceTest \
                 = message_states.get_user_sequence(user)
 
@@ -179,7 +181,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                 return
         # this is the message the bot put in the create a game channel
         elif channel.name == create_game_channel_name:
-            print("CHECKED as a create game message")
+            print("checked as a create game message")
             reactions = message.reactions
             for reaction in reactions:
                 try:
@@ -192,7 +194,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
             await message_states.add_user_sequence(user, new_game_sequence)
             await new_game_sequence.start_sequence()
         elif channel.name == join_game_channel_name:
-            print("CHECKED as a join game message")
+            print("checked as a join game message")
             # reaction was added on a message in the games channel
             game: Game = DatabaseFacade.get_game_by_message_did(
                 str(message.id)
@@ -211,9 +213,65 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 
         # this should become a check against all of the game's private channel
         # messages, which I'll probably build team swapping into
-        elif channel.category_id is not None:
-            print("CHECKED as a channel in a category")
-            pass
+        elif channel.category.name == DatabaseFacade.get_property(
+                GAME_CATEGORY_PROPERTY_NAME
+        ).value:
+            print("CHECKED as a channel in the game category")
+            if message.author.bot:
+                game: Game = DatabaseFacade.get_game_by_game_message_did(
+                    str(message.id)
+                )
+
+                user_as_player = DatabaseFacade.get_player_by_did(str(user.id))
+
+                emoji_name = payload.emoji.name
+                print("")
+                if emoji_name == UNICODE_0:
+                    team_number = 0
+                elif emoji_name == UNICODE_1:
+                    team_number = 1
+                elif emoji_name == UNICODE_2:
+                    team_number = 2
+                elif emoji_name == UNICODE_3:
+                    team_number = 3
+                elif emoji_name == UNICODE_4:
+                    team_number = 4
+                elif emoji_name == UNICODE_5:
+                    team_number = 5
+                elif emoji_name == UNICODE_6:
+                    team_number = 6
+                else:
+                    print(f"React with bad emoji: {emoji_name}")
+                    try:
+                        await message.remove_reaction(payload.emoji, user)
+                    except Exception as e:
+                        print(
+                            f"ERROR: While removing reaction, got exception of "
+                            f"type {type(e)}")
+
+                    return
+
+                if DatabaseFacade.add_player_to_team(
+                    game.id,
+                    team_number,
+                    user_as_player
+                ):
+                    await channel.send(
+                        content=f"{user.display_name} joined team "
+                        f"{team_number}"
+                    )
+                else:
+                    await channel.send(
+                        content=f"Could not add {user.display_name} to team "
+                        f"{team_number}: team is full or does not exist."
+                    )
+
+                try:
+                    await message.remove_reaction(payload.emoji, user)
+                except Exception as e:
+                    print(f"ERROR: While removing reaction, got exception of "
+                          f"type {type(e)}")
+
 
         else:
             print("CHECKED as other message")
@@ -266,7 +324,9 @@ async def scrims(context: commands.Context, *args):
 
 @bot.command()
 async def uni(context: commands.Context, emoji, *args):
-    as_unicode = "\\N{" + unicodedata.name(emoji[0]) + "}"
+    as_unicode = ""
+    for character in emoji:
+        as_unicode += "\\N{" + ud.name(character) + "}"
     reply_string = emoji + ": " + as_unicode
 
     await context.send(content=reply_string)
@@ -532,6 +592,13 @@ async def delete(context: commands.Context, *args):
             print(f"join_game_message has id")
             await join_game_message.delete()
             return
+
+@bot.command()
+async def test(context: commands.Context, *, test, test2):
+    help_command = commands.HelpCommand
+    print(test)
+    print(test2)
+
 
 
 def main():

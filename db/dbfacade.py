@@ -207,21 +207,46 @@ class DatabaseFacade:
             return
 
     @staticmethod
-    def add_player_to_team(game_id: int, team_number: int, player: Player):
-        game: Game = DatabaseFacade.get_game_by_id(game_id)
-        DatabaseFacade._add_player_to_team(game, team_number, player)
+    def add_player_to_team(
+            game_id: int,
+            team_number: int,
+            player: Player
+    ) -> bool:
 
-        session.commit()
+        game: Game = DatabaseFacade.get_game_by_id(game_id)
+        return DatabaseFacade._add_player_to_team(game, team_number, player)
+
+        # session.commit()
 
     @staticmethod
-    def _add_player_to_team(game: Game, team_number: int, player: Player):
+    def _add_player_to_team(
+            game: Game,
+            team_number: int,
+            player: Player
+    ) -> bool:
+
+        if team_number > len(game.teams):
+            return False
+        elif team_number < 0:
+            return False
+
         print(f"Adding player {player.id} to game: {game.id}, "
               f"team: {team_number}")
+        for team in game.teams:
+            if player in team.players:
+                team.players.remove(player)
+                session.commit()
+
         team: Team = game.teams[team_number]
-        if not player in team.players:
+        if player not in team.players:
+
+            # team is full
+            if len(team.players) > team.size:
+                return False
             team.players.append(player)
 
         session.commit()
+        return True
 
     @staticmethod
     def add_player_to_game(game_id: int, player: Player):
