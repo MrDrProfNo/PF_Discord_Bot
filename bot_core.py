@@ -208,6 +208,9 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                     user,
                     read_messages=True
                 )
+
+                if game.is_full():
+                    await message.clear_reactions()
             else:
                 print(f"Game not found with message_did: {message.id}")
 
