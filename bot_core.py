@@ -596,6 +596,26 @@ async def delete(context: commands.Context, *args):
             await join_game_message.delete()
             return
 
+
+@bot.command()
+async def teams(context: commands.Context):
+    game: Game = DatabaseFacade.get_game_by_channel_did(str(context.channel.id))
+    if game is not None:
+        reply = f"#######Game {game.id}#######\n"
+        for team in game.teams:
+            if team.number == 0:
+                reply += "Undecided:\n"
+            else:
+                reply += f"Team {team.number}:\n"
+
+            for player in team.players:
+                user: User = bot.get_user(int(player.did))
+                reply += f" - {user.display_name}\n"
+
+        await context.send(reply)
+
+
+
 @bot.command()
 async def test(context: commands.Context, *, test, test2):
     help_command = commands.HelpCommand
