@@ -337,6 +337,8 @@ class NewGameSequence(MessageSequence):
                 + f"Mode: {self.mode_str}\n"
                 + f"Platform: {self.platform_choice}\n"
                 + f"Description: {self.game_description}\n"
+                + ("" if self.game.mode == "FFA" or self.game.randomize_teams
+                   else f"React to join a team (team 0 = no team)")
         )
 
         game_summary_msg = await channel.send(embed=game_summary_embed)
@@ -367,8 +369,6 @@ class NewGameSequence(MessageSequence):
                 + f"Mode: {self.mode_str}\n"
                 + f"Platform: {self.platform_choice}\n"
                 + f"Description: {self.game_description}\n"
-                + "" if self.game.mode == "FFA" or self.game.randomize_teams
-                else f"React to join a team (team 0 = no team)"
         )
 
         channel_prop = DatabaseFacade.get_property(JOIN_GAME_CHANNEL)
