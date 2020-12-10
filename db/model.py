@@ -58,8 +58,7 @@ class Game(Base):
                 \nmessage_did: {self.message_did}"
 
     def is_full(self):
-        return sum([len(team.players) for team in self.teams]) \
-               >= len(self.teams[0])
+        return self.player_number >= self.teams[0].size
 
 
 # Defines the game state (WAITING, IN PROGRESS, FINISHED, CANCELLED)

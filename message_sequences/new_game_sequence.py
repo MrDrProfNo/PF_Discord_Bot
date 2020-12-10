@@ -114,12 +114,12 @@ class NewGameSequence(MessageSequence):
         # FFA games don't have to specify team sizes
         else:
             self.mode_str = "FFA"
-            await self.game_description_message()
-            self.pass_handler(self.game_description_handler)
+            await self.ffa_player_count_message()
+            self.pass_handler(self.ffa_player_count_handler)
 
     async def team_size_message(self):
         title = "How many players on each team?"
-        max_team_size = 12 // self.team_count
+        max_team_size = 8 // self.team_count
         desc = "(with {0} teams, teams can have at most {1} players)".format(
             self.team_count,
             max_team_size
@@ -142,7 +142,7 @@ class NewGameSequence(MessageSequence):
             )
             return
 
-        max_team_size = 12 // self.team_count
+        max_team_size = 8 // self.team_count
         if not 0 < team_size <= max_team_size:
             await self.user.send("Team size must be between 1 and {}".format(
                 max_team_size
@@ -199,6 +199,34 @@ class NewGameSequence(MessageSequence):
 
             await self.game_description_message()
             self.pass_handler(self.game_description_handler)
+
+    async def ffa_player_count_message(self):
+        title = "Number of Players"
+        desc = "Enter the number of players in your FFA game"
+
+        player_count_embed = Embed()
+        player_count_embed.title = title
+        player_count_embed.description = desc
+
+        self.current_message = await self.user.send(embed=player_count_embed)
+
+    @MessageSequence.requires_message
+    async def ffa_player_count_handler(self, message: Message):
+        try:
+            player_count = int(message.content)
+        except ValueError as e:
+            await self.user.send(f"{message.content} is not a number.")
+            return
+
+        if 0 < player_count <= 8:
+            self.team_size = player_count
+            await self.game_description_message()
+            self.pass_handler(self.game_description_handler)
+
+        else:
+            await self.user.send(f"Number of players must be between 2 and 8")
+            return
+
 
     async def game_description_message(self):
         title = "Game Info"
@@ -263,13 +291,22 @@ class NewGameSequence(MessageSequence):
                         target_mode = mode
 
                 if target_mode is not None:
-
-                    self.game = DatabaseFacade.add_game(
-                        str(self.user.id),
-                        self.platform_choice,
-                        target_mode.value,
-                        ""
-                    )
+                    print(f"found a mode with modestring {self.mode_str}")
+                    if target_mode.value[3] == "FFA":
+                        self.game = DatabaseFacade.add_game(
+                            str(self.user.id),
+                            self.platform_choice,
+                            target_mode.value,
+                            "",
+                            max_size=self.team_size
+                        )
+                    else:
+                        self.game = DatabaseFacade.add_game(
+                            str(self.user.id),
+                            self.platform_choice,
+                            target_mode.value,
+                            "",
+                        )
 
                     await self.create_game_channel()
 
@@ -337,7 +374,7 @@ class NewGameSequence(MessageSequence):
                 + f"Mode: {self.mode_str}\n"
                 + f"Platform: {self.platform_choice}\n"
                 + f"Description: {self.game_description}\n"
-                + ("" if self.game.mode == "FFA" or self.game.randomize_teams
+                + ("" if self.game.mode.name == "FFA" or self.game.randomize_teams
                    else f"React to join a team (team 0 = no team)")
         )
 

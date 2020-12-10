@@ -66,8 +66,8 @@ class DatabaseFacade:
             return query_result.first()
 
     @staticmethod
-    def add_game(creator_did: str, platform: str, mode: list,
-                 message_did: str):
+    def add_game(creator_did: str, platform: str, mode: tuple,
+                 message_did: str, max_size: int=None):
 
         print(f"Got mode: {mode}")
 
@@ -116,11 +116,18 @@ class DatabaseFacade:
         new_game.randomize_teams = mode[2]
 
         session.add(new_game)
-        session.commit()
 
         team0 = Team()
         team0.number = 0
-        team0.size = 12
+        if mode[0] == 0:
+            if max_size is not None:
+                team0.size = max_size
+            else:
+                raise ValueError("mode -> max_players is 0, and no max_size was"
+                                 " provided")
+        else:
+            team0.size = mode[0]
+
         team0.game_id = new_game.id
         team0.players.append(creator)
         session.add(team0)
@@ -244,7 +251,7 @@ class DatabaseFacade:
             if len(team.players) > team.size:
                 return False
             team.players.append(player)
-
+        game.player_number += 1
         session.commit()
         return True
 
@@ -264,6 +271,7 @@ class DatabaseFacade:
         for team in game.teams:
             if player in team.players:
                 team.players.remove(player)
+                game.player_number -= 1
                 session.commit()
                 return True
             else:

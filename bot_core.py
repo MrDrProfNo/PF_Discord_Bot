@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import Message, Emoji, User, Guild, TextChannel, CategoryChannel, \
-    DMChannel
+    DMChannel, Embed
 import sys
 import os
 import unicodedata as ud
@@ -16,7 +16,10 @@ from db.property_constants import CREATE_GAME_CHANNEL, JOIN_GAME_CHANNEL, \
 from db.dbfacade import DatabaseFacade
 from db.model import Game
 
-bot = commands.Bot(command_prefix='!')
+
+intent = discord.Intents().all()
+
+bot = commands.Bot(command_prefix='!', intent=intent)
 
 # message sequence related code
 message_states = UserMessageStates()
@@ -615,13 +618,21 @@ async def teams(context: commands.Context):
         await context.send(reply)
 
 
-
 @bot.command()
-async def test(context: commands.Context, *, test, test2):
-    help_command = commands.HelpCommand
-    print(test)
-    print(test2)
+async def test(context: commands.Context):
+    embed: Embed = Embed()
+    embed.title = "test embed"
+    embed.description = "test embed description"
+    embed.add_field(
+        name="fieldname",
+        value="fieldvalue",
+        inline=True
+    )
 
+    msg = await context.send(embed=embed)
+
+    edited_embed: Embed = msg.embeds[0]
+    # edited_embed.set_field_at(0, )
 
 
 def main():
