@@ -15,7 +15,7 @@ from db.property_constants import CREATE_GAME_CHANNEL, JOIN_GAME_CHANNEL, \
     GAME_CATEGORY_PROPERTY_NAME
 from db.dbfacade import DatabaseFacade
 from db.model import Game
-
+import time
 
 intent = discord.Intents().all()
 
@@ -104,6 +104,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
 
 @bot.event
 async def on_message(message: discord.Message):
+    print(message.content, ":", len(message.content))
     if not message.author.bot:
         author_name = message.author.name
         channel: discord.TextChannel = message.channel
@@ -213,6 +214,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                 )
 
                 if game.is_full():
+                    print("game is full, clearing all messages")
                     await message.clear_reactions()
             else:
                 print(f"Game not found with message_did: {message.id}")
@@ -605,7 +607,7 @@ async def teams(context: commands.Context):
     game: Game = DatabaseFacade.get_game_by_channel_did(str(context.channel.id))
     if game is not None:
         reply = f"#######Game {game.id}#######\n"
-        for team in game.teams:
+        for team in game.teams[1:]:
             if team.number == 0:
                 reply += "Undecided:\n"
             else:
@@ -619,20 +621,39 @@ async def teams(context: commands.Context):
 
 
 @bot.command()
-async def test(context: commands.Context):
-    embed: Embed = Embed()
-    embed.title = "test embed"
-    embed.description = "test embed description"
-    embed.add_field(
-        name="fieldname",
-        value="fieldvalue",
-        inline=True
+async def start(context: commands.Context):
+    game: Game = DatabaseFacade.get_game_by_channel_did(str(context.channel.id))
+    if game is not None:
+        DatabaseFacade.start_game(game.id)
+
+    start_embed = Embed()
+    start_embed.title = "Starting game..."
+    start_embed.description = (
+            f"Game begun at {game.started_at} with teams:"
     )
+    print("counting teams: ", len(game.teams))
 
-    msg = await context.send(embed=embed)
+    for team in game.teams:
+        print("embed adding team: ", team.number)
+        player_names = [
+            bot.get_user(int(player.did)).name for player in team.players
+        ]
 
-    edited_embed: Embed = msg.embeds[0]
-    # edited_embed.set_field_at(0, )
+        player_string = "\n".join(player_names)
+        start_embed.add_field(
+            name=f"Team {team.number}",
+            value=f"{player_string}",
+            inline=False
+        )
+
+    await context.send(embed=start_embed)
+
+
+@bot.command()
+async def test(context: commands.Context):
+    await context.send(
+        content=f"{context.author.name} : {context.author.discriminator}"
+    )
 
 
 def main():
