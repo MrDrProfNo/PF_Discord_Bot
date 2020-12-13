@@ -15,7 +15,8 @@ from db.property_constants import CREATE_GAME_CHANNEL, JOIN_GAME_CHANNEL, \
     GAME_CATEGORY_PROPERTY_NAME
 from db.dbfacade import DatabaseFacade
 from db.model import Game
-import time
+import random
+
 
 intent = discord.Intents().all()
 
@@ -623,8 +624,12 @@ async def teams(context: commands.Context):
 @bot.command()
 async def start(context: commands.Context):
     game: Game = DatabaseFacade.get_game_by_channel_did(str(context.channel.id))
-    if game is not None:
+    if game.player_number != game.teams[0].size:
+        await context.send("Cannot start game until game is full...")
+        # return
+    elif game is not None:
         DatabaseFacade.start_game(game.id)
+
 
     start_embed = Embed()
     start_embed.title = "Starting game..."
@@ -633,16 +638,45 @@ async def start(context: commands.Context):
     )
     print("counting teams: ", len(game.teams))
 
-    for team in game.teams:
-        print("embed adding team: ", team.number)
-        player_names = [
-            bot.get_user(int(player.did)).name for player in team.players
-        ]
+    if game.teams_available:
+        if game.randomize_teams:
+            for team in game.teams[1:]:
+                empty_slots = team.size - len(team.players)
+                players = random.choice(game.teams[0], k=empty_slots)
+                for player in players:
+                    print(f"adding player {player.id} to team {team.number}")
+                    DatabaseFacade.add_player_to_team(
+                        game.id,
+                        team.number,
+                        player
+                    )
 
-        player_string = "\n".join(player_names)
+
+        for team in game.teams[1:]:
+            player_names = [
+                bot.get_user(int(player.did)).name for player in team.players
+            ]
+
+            if len(player_names) > 0:
+                player_string = "\n".join(player_names)
+            else:
+                player_string = "(no players)"
+            start_embed.add_field(
+                name=f"Team {team.number}",
+                value=f"{player_string}",
+                inline=False
+            )
+    else:
+        player_names = [
+            bot.get_user(int(player.did)).name for player in teams[0].players
+        ]
+        if len(player_names) > 0:
+            player_string = "\n".join(player_names)
+        else:
+            player_string = "(no players)"
         start_embed.add_field(
-            name=f"Team {team.number}",
-            value=f"{player_string}",
+            name="Randomized teams",
+            value=f"Players\n: {player_string}",
             inline=False
         )
 
@@ -651,8 +685,12 @@ async def start(context: commands.Context):
 
 @bot.command()
 async def test(context: commands.Context):
+    embed = Embed()
+    embed.title = "test"
+    embed.description = "\n".join(["1", "2", "3"])
+    embed.add_field(name="field1", value="field1val", inline=True)
     await context.send(
-        content=f"{context.author.name} : {context.author.discriminator}"
+        embed=embed
     )
 
 

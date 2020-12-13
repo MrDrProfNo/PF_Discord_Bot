@@ -152,8 +152,6 @@ class NewGameSequence(MessageSequence):
         else:
             self.team_size = team_size
 
-        # TODO: correct "Random Teams" to user choice; not currently
-        #  asked for.
         self.mode_str = ((str(self.team_size) + "v")
                          * (self.team_count - 1)
                          + str(self.team_size))

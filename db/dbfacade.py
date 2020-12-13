@@ -109,8 +109,11 @@ class DatabaseFacade:
         # player_number = Column(Integer)
         new_game.player_number = 0
 
-        # teams_available = Column(Boolean)
-        new_game.teams_available = True
+        if len(mode[1]) == 0:
+            # teams_available = Column(Boolean)
+            new_game.teams_available = False
+        else:
+            new_game.teams_available = True
 
         # randomize_teams = Column(Boolean)
         new_game.randomize_teams = mode[2]
@@ -291,7 +294,7 @@ class DatabaseFacade:
 
     @staticmethod
     def start_game(game_id: int):
-        game: Game = session.query(Game).filter_by_(id=game_id)
+        game: Game = session.query(Game).filter_by(id=game_id)
         game.started_at = sqlalchemy.func.now()
 
 
