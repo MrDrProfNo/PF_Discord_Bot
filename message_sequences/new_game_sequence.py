@@ -367,9 +367,11 @@ class NewGameSequence(MessageSequence):
         game_summary_embed.title = ("-" * 20) + f"Game {self.game.id} Summary" \
             + ("-" * 20)
 
+        max_players = self.game.teams[0].size
         game_summary_embed.description = (
                 f"Created by: {self.user.mention}\n"
-                + f"Mode: {self.mode_str}\n"
+                + f"Mode: {self.mode_str} "
+                + (f"({max_players})" if self.mode_str == "FFA" else "") + "\n"
                 + f"Platform: {self.platform_choice}\n"
                 + f"Description: {self.game_description}\n"
                 + ("" if self.game.mode.name == "FFA" or self.game.randomize_teams
@@ -386,10 +388,12 @@ class NewGameSequence(MessageSequence):
         team_emoji = [UNICODE_0, UNICODE_1, UNICODE_2, UNICODE_3, UNICODE_4,
                        UNICODE_5, UNICODE_6]
 
-        for team in self.game.teams:
-            emoji = team_emoji[team.number]
-            await game_summary_msg.add_reaction(emoji)
-
+        if self.game.randomize_teams:
+            pass
+        else:
+            for team in self.game.teams:
+                emoji = team_emoji[team.number]
+                await game_summary_msg.add_reaction(emoji)
 
     async def game_public_message(self):
 
@@ -398,10 +402,13 @@ class NewGameSequence(MessageSequence):
         game_summary_embed.title = ("-" * 20) + f"Game {self.game.id} Summary" \
                                    + ("-" * 20)
 
+        max_players = self.game.teams[0].size
         game_summary_embed.description = (
                 "React to join!\n"
                 + f"Created by: {self.user.mention}\n"
-                + f"Mode: {self.mode_str}\n"
+                + f"Mode: {self.mode_str} "
+                + (f"({max_players})" if self.mode_str == "FFA" else "") + "\n"
+                + f"Platform: {self.platform_choice}\n"
                 + f"Platform: {self.platform_choice}\n"
                 + f"Description: {self.game_description}\n"
         )

@@ -3,7 +3,7 @@ from enum import Enum
 
 # The Enum with all game modes. Using array of teams instead of number, since there may be asymmetrical game modes.
 class GameMode(Enum):
-    FFA = (0, [], False, "FFA")
+    FFA = (0, [], True, "FFA")
     DUEL = (2, [], False, "1v1")
     FIXED2v2 = (4, [2, 2], False, "2v2 Fixed Teams")
     FIXED3v3 = (6, [3, 3], False, "3v3 Fixed Teams")
@@ -16,6 +16,7 @@ class GameMode(Enum):
     FIXED3v3v3v3 = (12, [3, 3, 3, 3], False, "3v3v3v3 Fixed Teams")
     FIXED2v2v2v2v2 = (10, [2, 2, 2, 2, 2], False, "2v2v2v2v2 Fixed Teams")
     FIXED2v2v2v2v2v2 = (12, [2, 2, 2, 2, 2, 2], False, "2v2v2v2v2v2 Fixed Teams")
+    RANDOM1v1 = (2, [1, 1], True, "1v1 Random Teams")
     RANDOM2v2 = (4, [2, 2], True, "2v2 Random Teams")
     RANDOM3v3 = (6, [3, 3], True, "3v3 Random Teams")
     RANDOM4v4 = (8, [4, 4], True, "4v4 Random Teams")

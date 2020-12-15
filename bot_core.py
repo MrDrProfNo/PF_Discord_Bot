@@ -385,7 +385,7 @@ async def newgame(context: commands.Context, *args):
 
 
 @bot.command()
-async def game(context: commands.Context, game_id: str):
+async def showgame(context: commands.Context, game_id: str):
     try:
         game_id = int(game_id)
     except ValueError:
@@ -608,28 +608,38 @@ async def teams(context: commands.Context):
     game: Game = DatabaseFacade.get_game_by_channel_did(str(context.channel.id))
     if game is not None:
         reply = f"#######Game {game.id}#######\n"
-        for team in game.teams[1:]:
-            if team.number == 0:
-                reply += "Undecided:\n"
-            else:
-                reply += f"Team {team.number}:\n"
+        if len(game.teams) == 1:
+            reply += "FFA Games do not have teams"
+        elif game.randomize_teams:
+            reply += (
+                f"Teams will be randomized when the game is started (use"
+                f" {bot.command_prefix}start to start it)")
+        else:
+            for team in game.teams[1:]:
+                if team.number == 0:
+                    reply += "Undecided:\n"
+                else:
+                    reply += f"Team {team.number}:\n"
 
-            for player in team.players:
-                user: User = bot.get_user(int(player.did))
-                reply += f" - {user.display_name}\n"
+                for player in team.players:
+                    user: User = await bot.fetch_user(int(player.did))
+                    reply += f" - {user.display_name}\n"
 
         await context.send(reply)
+    else:
+        await context.send("This channel no longer has an associated game")
 
 
 @bot.command()
 async def start(context: commands.Context):
     game: Game = DatabaseFacade.get_game_by_channel_did(str(context.channel.id))
     if game.player_number != game.teams[0].size:
-        await context.send("Cannot start game until game is full...")
+        await context.send("Cannot start game until game is full "
+                           f"(current: {game.player_number}, "
+                           f"needed: {game.teams[0].size})")
         # return
     elif game is not None:
         DatabaseFacade.start_game(game.id)
-
 
     start_embed = Embed()
     start_embed.title = "Starting game..."
@@ -642,7 +652,11 @@ async def start(context: commands.Context):
         if game.randomize_teams:
             for team in game.teams[1:]:
                 empty_slots = team.size - len(team.players)
-                players = random.choice(game.teams[0], k=empty_slots)
+                if empty_slots > len(game.teams[0].players):
+                    await context.send(f"ERROR: Insufficient number of players "
+                                       f"to fill teams; ran out on team "
+                                       f"{team.number}")
+                players = random.sample(game.teams[0].players, k=empty_slots)
                 for player in players:
                     print(f"adding player {player.id} to team {team.number}")
                     DatabaseFacade.add_player_to_team(
@@ -650,11 +664,16 @@ async def start(context: commands.Context):
                         team.number,
                         player
                     )
-
+        else:
+            if sum([len(team.players) for team in game.teams[1:]])<len(game.teams[0]):
+                await context.send("All players must be in a team before game can"
+                                   " begin")
+                return
 
         for team in game.teams[1:]:
+            print("Players:", team.players, ":", int(team.players[0].did))
             player_names = [
-                bot.get_user(int(player.did)).name for player in team.players
+                await bot.fetch_user(int(player.did)).name for player in team.players
             ]
 
             if len(player_names) > 0:
@@ -668,7 +687,9 @@ async def start(context: commands.Context):
             )
     else:
         player_names = [
-            bot.get_user(int(player.did)).name for player in teams[0].players
+            await bot.fetch_user(int(player.did)).name
+            for player
+            in game.teams[0].players
         ]
         if len(player_names) > 0:
             player_string = "\n".join(player_names)
@@ -676,7 +697,7 @@ async def start(context: commands.Context):
             player_string = "(no players)"
         start_embed.add_field(
             name="Randomized teams",
-            value=f"Players\n: {player_string}",
+            value=f"Players:\n {player_string}",
             inline=False
         )
 
@@ -684,14 +705,9 @@ async def start(context: commands.Context):
 
 
 @bot.command()
-async def test(context: commands.Context):
-    embed = Embed()
-    embed.title = "test"
-    embed.description = "\n".join(["1", "2", "3"])
-    embed.add_field(name="field1", value="field1val", inline=True)
-    await context.send(
-        embed=embed
-    )
+async def test(context: commands.Context, arg: str):
+    user: User = await bot.fetch_user(int(arg))
+    await context.send(str(user))
 
 
 def main():

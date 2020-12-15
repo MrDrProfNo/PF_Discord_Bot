@@ -296,5 +296,6 @@ class DatabaseFacade:
     def start_game(game_id: int):
         game: Game = session.query(Game).filter_by(id=game_id)
         game.started_at = sqlalchemy.func.now()
+        session.commit()
 
 
